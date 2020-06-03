@@ -184,3 +184,86 @@ return 7*24*60;
 add 2 for each time they breed;
 
 }
+
+```
+class Kitty {
+    uint256 genes;
+    uint64 birthTime; // timestamp
+    uint64 cooldownEndBlock; // timestamp after which can breed again
+    uint32 matronId; // 0 if gen0
+    uint32 sireId;
+    uint32 siringWithId; // ID of sire for pregnant matrons, otherwise 0
+    uint16 cooldownIndex; // floor(generation/2) + 1 for each breeding action,
+    uint16 generation; // max(matron.generation, sire.generation) + 1
+}
+
+```
+
+```
+class KittyResponseVerbose {
+    id: number;
+    name: string;
+    bio: string;
+    imageUrl: string;
+    imageUrlCdn: string;
+    imageUrlPng: string;
+    imagePath: string;
+    generation: number; // uint16
+    createdAt: Date; // UTC timestamp
+    color: string;
+    isFancy: boolean;
+    isExclusive: boolean;
+    fancyType: string;
+    language: string; // ISO Language Code
+    enhancedCattributes: Cattribute[];
+    status: Status;
+    purrs: PurrStat;
+    watchList: {
+        count: number;
+        isWatchlisted: boolean;
+    };
+    hatched: boolean;
+    isPrestige: boolean;
+    prestigeType: null;
+    prestigeRanking: null;
+    prestigeTimeLimit: null;
+    auction: {};
+    matron: Kitty | {}; // empty object if generation 0
+    sire: Kitty | {};
+    owner: {
+        address: string; // hexadecimal
+};
+}
+
+// https://gist.github.com/arpit/071e54b95a81d13cb29681407680794f
+class Kitty {
+    uint256 genes;
+    uint64 birthTime; // timestamp
+    uint64 cooldownEndBlock; // timestamp after which can breed again
+    uint32 matronId; // 0 if gen0
+    uint32 sireId;
+    uint32v siringWithId; // ID of sire for pregnant matrons, otherwise 0
+    uint16 cooldownIndex; // floor(generation/2) + 1 for each breeding action, max 13
+    uint16 generation; // max(matron.generation, sire.generation) + 1
+}
+
+class Cattribute {
+    type: string;
+    description: string;
+    position: number;
+    kittyId: number;
+}
+class Status {
+    cooldown: Date;
+    cooldownIndex: number;
+    isReady: boolean;
+    isGestating: boolean;
+}
+class PurrStat {
+    count: number;
+    isPurred: boolean;
+}
+class watchListStat {
+
+}
+```
