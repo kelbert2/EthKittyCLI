@@ -1,21 +1,55 @@
-// https://medium.com/makersplace/are-you-a-maker-join-us-b53e5d9e5280
+# The Aim
+build a program that takes a startingBlock and endingBlock as arguments and counts the total number of births that happened during that range. Finally, use that information to find the Kitty (birth timestamp, generation and their genes) that gave birth to the most kitties.
 
-// https://hackernoon.com/understanding-ethereum-a-complete-guide-6f32ea8f5888
+Need to add a config.json with {"id"=<infura project id>} to src.
+ 
+Smart contracts can emit events and write logs to the blockchain upon mining a transaction.
+# To Run
+npm run build
+npm run 
+
+# Resources
+Creating a CLI with Typescript:
+
+https://itnext.io/how-to-create-your-own-typescript-cli-with-node-js-1faf7095ef89
+
+Deciphering Source Code:
+
+https://medium.com/block-science/exploring-cryptokitties-part-1-data-extraction-1b1e35921f85
+
+And verified here:
+
+https://etherscan.io/address/0x06012c8cf97bead5deae237070f9587f8e7a266d#events
 
 
-// startingBlock=6607985 and endingBlock=7028323   
-function numberofBirths(startingBlock, endingBlock) {
+https://medium.com/makersplace/are-you-a-maker-join-us-b53e5d9e5280
 
-}
+https://hackernoon.com/understanding-ethereum-a-complete-guide-6f32ea8f5888
 
 
 https://developer.okta.com/blog/2019/06/18/command-line-app-with-nodejs
-npm install -g
-npm uninstall -g hello-kitty
 
-function bigMomma(startingBlock, endingBlock) {
 
+
+https://gist.github.com/arpit/071e54b95a81d13cb29681407680794f
+```Solidarity
+struct Kitty {
+  uint256 genes;
+  uint64 birthTime; // timestamp
+  uint64 cooldownEndBlock; // timestamp after which can breed again
+  uint32 matronId; // 0 if gen0
+  uint32 sireId;
+  uint32v siringWithId; // ID of sire for pregnant matrons, otherwise 0
+  uint16 cooldownIndex; // floor(generation/2) + 1 for each breeding action
+  uint16 generation; // max(matron.generation, sire.generation) + 1
 }
+```
+
+
+uint16 cooldownIndex = uint16(_generation / 2);
+        if (cooldownIndex > 13) {
+            cooldownIndex = 13;
+        }
 
 class Cattribute {
           "type": "body",
@@ -23,22 +57,6 @@ class Cattribute {
           "position": 31,
           "kittyId": 129
 }
-https://gist.github.com/arpit/071e54b95a81d13cb29681407680794f
-class Kitty {
-uint256 genes;
-uint64 birthTime; // timestamp
-uint64 cooldownEndBlock; // timestamp after which can breed again
-uint32 matronId; // 0 if gen0
-uint32 sireId;
-uint32v siringWithId; // ID of sire for pregnant matrons, otherwise 0
-uint16 cooldownIndex; // floor(generation/2) + 1 for each breeding action
-uint16 generation; // max(matron.generation, sire.generation) + 1
-}
-uint16 cooldownIndex = uint16(_generation / 2);
-        if (cooldownIndex > 13) {
-            cooldownIndex = 13;
-        }
-
 
     birth: timestamp;
     generation: number;
@@ -48,93 +66,9 @@ uint16 cooldownIndex = uint16(_generation / 2);
 
 
 
-          "id": 129,
-      "name": "Furlin",
-      "bio": "Behold, master, I am #{name}. The collective wisdom of 999 lives swirls within my white-whiskered head, so forgive me if sometimes I'm forgetful. Only the mightiest mages and sauciest sorcerers of the KittyVerse may make use of my cat-aclysmic powers.",
-      "image_url": "https://img.cryptokitties.co/0x5328276603d169165d0f71ca67ccc89c45027df3/129.png",
-      "image_url_cdn": "https://img.cn.cryptokitties.co//0x5328276603d169165d0f71ca67ccc89c45027df3/129.png",
-      "image_url_png": "https://img.cryptokitties.co/0x5328276603d169165d0f71ca67ccc89c45027df3/129.png",
-      "image_path": "",
-      "generation": 0,
-      "created_at": "2018-05-28T18:17:13Z",
-      "color": "thundergrey",
-      "is_fancy": true,
-      "is_exclusive": true,
-      "fancy_type": "Furlin",
-      "language": "en",
-      "enhanced_cattributes": [
-        {
-          "type": "body",
-          "description": "koladiviya",
-          "position": 31,
-          "kittyId": 129
-        },
-        {
-          "type": "colorprimary",
-          "description": "mauveover",
-          "position": 21,
-          "kittyId": 129
-        },
-        {
-          "type": "colorsecondary",
-          "description": "coffee",
-          "position": -1,
-          "kittyId": 129
-        },
-        {
-          "type": "colortertiary",
-          "description": "azaleablush",
-          "position": 25,
-          "kittyId": 129
-        },
-        {
-          "type": "coloreyes",
-          "description": "thundergrey",
-          "position": 14,
-          "kittyId": 129
-        },
-        {
-          "type": "eyes",
-          "description": "slyboots",
-          "position": 12,
-          "kittyId": 129
-        },
-        {
-          "type": "mouth",
-          "description": "wuvme",
-          "position": 38,
-          "kittyId": 129
-        }
-      ],
-      "status": {
-        "cooldown": 1492070103070,
-        "cooldown_index": 0,
-        "is_ready": true,
-        "is_gestating": false
-      },
-      "purrs": {
-        "count": 0,
-        "is_purred": false
-      },
-      "watchlist": {
-        "count": 0,
-        "is_watchlisted": false
-      },
-      "hatched": true,
-      "is_prestige": false,
-      "prestige_type": null,
-      "prestige_ranking": null,
-      "prestige_time_limit": null,
-      "auction": {},
-      "matron": {},
-      "sire": {},
-      "owner": {
-        "address": "0x6f9e990f5b59265e63f12722acb49acc55e2fe56"
-      }
-}
+     
 
 
-// https://medium.com/cryptokitties/a-primer-on-kitty-cooldown-speeds-379980fe7f2b
 cooldown {
 increases every time it breeds
 
