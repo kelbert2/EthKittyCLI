@@ -1,0 +1,19 @@
+{
+  "name": "cryptokitties",
+  "version": "1.0.0",
+  "description": "",
+  "main": "bin/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "Kristianna Elbert (https://kelbert2.github.io/)",
+  "license": "MIT",
+  "bin": {
+    "hello-kitty": "./bin/test.js",
+    "kitten-stats": "./bin/index.js"
+  },
+  "dependencies": {
+    "yargs": "^15.3.1"
+  }
+}

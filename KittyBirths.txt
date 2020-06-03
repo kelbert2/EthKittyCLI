@@ -1,0 +1,10 @@
+class KittyBirths {
+    startingBlock;
+    endingBlock;
+    function numberOfBirths(startingBlock, endingBlock) {
+
+    }
+    function biggestMommaInRange() {
+
+    }
+}
