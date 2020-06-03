@@ -13,7 +13,8 @@
     "hello-kitty": "./bin/test.js",
     "kitten-stats": "./bin/index.js"
   },
-  "dependencies": {
-    "yargs": "^15.3.1"
+  "dependencies": {},
+  "devDependencies": {
+    "@types/yargs": "^15.0.5"
   }
 }
