@@ -8,7 +8,7 @@
     "create": "npm run build && npm run test",
     "build": "tsc -p .",
     "test-hello": "sudo npm i -g && hello-kitty -n Kitty",
-    "test": "sudo npm i -g && kitten-stats",
+    "test": "sudo npm i -g && kitten-stats -s 2 -e 3",
     "refresh": "rm -rf ./node_modules ./package-lock.json && npm install"
   },
   "keywords": [],
@@ -23,7 +23,7 @@
     "yargs": "^15.3.1"
   },
   "devDependencies": {
-    "@types/node": "^14.0.9",
+    "@types/node": "^14.0.11",
     "@types/yargs": "^15.0.5",
     "nodemon": "^2.0.4",
     "ts-node": "^8.10.2",

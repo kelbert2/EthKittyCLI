@@ -19,27 +19,48 @@ const ADDRESS = "0x06012c8cf97BEaD5deAe237070F9587f8E7A266d";
 const BIRTH_TOPIC = "0x0a5311bd2a6608f08a180df2ee7c5946819a649b204b554bb8e39825b2c50ad5";
 
 const options = yargs
-    .usage('$0 [options] <path> -s [num] -e [num]', 'get births and fetch biggest momma within range')
-    .option('_', {
-        default: ['./storage.json'],
-        describe: 'Path to a storage.json file. If no path is supplied, the current directory is used.'
+    .usage('Usage: $0 [options] -f [/path/to/file.json] -s [starting-block-number] -e [ending-block-number]')
+    .example('$0 -f ../path/storage.json -s 0 -e 3', 'get births and fetch biggest momma between blocks 0 - 3 inclusive, using stored statistics from ../path/storage.json')
+    .option("f", {
+        alias: "file",
+        describe: 'Path to a storage .json file. If no path is supplied, the current directory is used.',
+        type: "string",
+        default: './storage.json'
     })
     .option("s", {
         alias: "start",
         describe: "starting block",
         type: "number",
-        default: 6607985
+        default: 2
     })
     .option("e", {
         alias: "end",
         describe: "ending block",
         type: "number",
-        default: 7028323
+        default: 22
     })
     .argv;
 
+// TODO: make file writing and reading optional 
+// default blocks: 6607985, 7028323
+let storage = options.f;
 
-let storage = options._[1];
+// blocking
+try {
+    if (fs.existsSync(storage)) {
+        console.log("See storage file");
+    }
+} catch (err) {
+    console.error("Storage file not found: " + err)
+}
+try {
+    if (fs.existsSync('./dummy_data.json')) {
+        console.log("See dummy file");
+    }
+} catch (err) {
+    console.error(err)
+}
+
 console.log("Using file from " + storage);
 let web3: Web3 = new Web3(new Web3.providers.HttpProvider("https://mainnet.infura.io/v3/" + config.id)); // http://localhost:8545 for local
 // connect to local or remote node
@@ -55,8 +76,7 @@ let totalMommaMap = new Map<string, number>();
 // }
 
 // https://web3js.readthedocs.io/en/v1.2.7/web3-eth.html#getpastlogs
-// 
-for (let blockNumberIter = options.s; blockNumberIter <= options.e;) {
+for (let blockNumberIter = options.s; blockNumberIter < options.e;) {
     let start = blockNumberIter;
     let end = (start + rangeSize > options.e) ? options.e : start + rangeSize;
 
@@ -64,15 +84,18 @@ for (let blockNumberIter = options.s; blockNumberIter <= options.e;) {
     let startIncrement = (startIncrementDifference === 0) ? start : (rangeSize - startIncrementDifference) + start; // next higher than start that is a stored increment
     let endIncrement = end - end % rangeSize; // next lower than end that is a stored increment, can be 0
 
+    console.log(start + " - " + end + ", " + startIncrement + " - " + endIncrement);
     // start <= startIncrement
     // endIncrement < end
 
     if (start < end && end < startIncrement) {
+        console.log("looking between s and e " + start + " and " + end);
         queryInfura(start, end, false);
     } else {
 
         // Stats from start to startIncrement
         if (start < startIncrement && startIncrement < end) {
+            console.log("looking between s and si " + start + " and " + (startIncrement - 1));
             queryInfura(start, startIncrement - 1, false); // as the range is inclusive and don't want overlap
         }
 
@@ -80,6 +103,7 @@ for (let blockNumberIter = options.s; blockNumberIter <= options.e;) {
         if (endIncrement > startIncrement) {
             // check if file has stats for this range
             let processed = false; // jump functions don't work inside read file
+            console.log("looking between si and ei " + startIncrement + " and " + (endIncrement - 1));
 
             fs.readFile(storage, (err, data) => {
                 if (err) {
@@ -100,17 +124,19 @@ for (let blockNumberIter = options.s; blockNumberIter <= options.e;) {
             });
 
             if (!processed) {
+                console.log("Could not find in file")
                 queryInfura(startIncrement, endIncrement - 1, true);
             }
         }
 
-        // Stats from endIncrement to end
-        if (start < endIncrement && endIncrement < end) {
-            queryInfura(endIncrement, end - 1, false);
-        }
+        // Stats from endIncrement to end will be covered the next round
+        // if (start < endIncrement && endIncrement < end) {
+        //     console.log("looking between ei and e " + endIncrement + " and " + (end - 1));
+        //     queryInfura(endIncrement, end - 1, false);
+        // }
     }
 
-    blockNumberIter = end;
+    blockNumberIter = endIncrement;
 }
 
 console.log("Pregnancy Count: " + totalPregnancyCount);
@@ -190,6 +216,7 @@ function queryInfura(start: number, end: number, write = true) {
     let pregnancyCount = 0;
     let mommaMap = new Map<string, number>();
 
+    console.log("Preparing to read from file");
     // return
     // web3.eth.getPastLogs({
     //     address: ADDRESS,
@@ -203,55 +230,62 @@ function queryInfura(start: number, end: number, write = true) {
 
     let result: DummyLog[];
 
-    fs.readFile('./dummy_data.json', (err, data) => {
-        if (err) {
-            console.log("Error reading file " + storage + ": " + err);
-        } else {
-            result = JSON.parse(data.toString());
+    // fs.readFile('./dummy_data.json', function (err, data) {
+    //     if (err) {
+    //         console.log("Error reading file " + storage + ": " + err);
+    //     } else {
+    const data = fs.readFileSync('./dummy_data.json');
+    console.log("Parsing dummy data");
+    try {
+        result = JSON.parse(data.toString());
 
-            // }).then(result => {
-            // for each log in the result
-            for (let i = 0; i < result.length; i++) {
-                // chop off the first two 0x from the string, then divide into 64-character parameters
-                let data = result[i].data.substring(2).match(/[\s\S]{1,64}/g);
+        // }).then(result => {
+        // for each log in the result
+        for (let i = 0; i < result.length; i++) {
+            // chop off the first two 0x from the string, then divide into 64-character parameters
+            let data = result[i].data.substring(2).match(/[\s\S]{1,64}/g);
 
-                let matronId = data ? data[2].replace(/^0+(?!$)/, "") : null;
-                // choosing not to parseInt to convert hex string (without a 0x prefix) to decimal number so can convert mommaMap to a json object with string keys
-                // will need to convert in order to get biggest momma kitty by id
-                if (matronId != null) {
-                    let initialValue = mommaMap.get(matronId) ?? 0;
-                    mommaMap.set(matronId, ++initialValue);
-                    pregnancyCount++;
+            let matronId = data ? data[2].replace(/^0+(?!$)/, "") : null;
+            // choosing not to parseInt to convert hex string (without a 0x prefix) to decimal number so can convert mommaMap to a json object with string keys
+            // will need to convert in order to get biggest momma kitty by id
+            if (matronId != null) {
+                let initialValue = mommaMap.get(matronId) ?? 0;
+                mommaMap.set(matronId, ++initialValue);
+                pregnancyCount++;
 
-                    // TODO: may move after this then so can apply even if get data from file
-                    totalPregnancyCount++;
-                    let totalInitialValue = totalMommaMap.get(matronId) ?? 0;
-                    totalMommaMap.set(matronId, ++totalInitialValue);
-                }
+                // TODO: may move after this then so can apply even if get data from file
+                totalPregnancyCount++;
+                let totalInitialValue = totalMommaMap.get(matronId) ?? 0;
+                totalMommaMap.set(matronId, ++totalInitialValue);
             }
-
-            if (write) {
-                // write statistics to file so won't have to call for the same range again
-                let stats: StorageItem = {
-                    startBlock: start,
-                    endBlock: end,
-                    totalBirths: pregnancyCount,
-                    mommaMap: strMapToObj(mommaMap)
-                }
-                fs.readFile(storage, (err, data) => {
-                    if (err) console.log("Error reading file " + storage + ": " + err);
-                    let json = JSON.parse(data.toString());
-                    json.push(start + ': ' + stats);
-
-                    fs.writeFile(storage, JSON.stringify(json), (err) => {
-                        if (err) console.log("Error writing to file " + storage + ": " + err);
-                    });
-                });
-            }
-
         }
-    });
+
+        if (write) {
+            // write statistics to file so won't have to call for the same range again
+            console.log("writing " + pregnancyCount + " births to file.");
+            let stats: StorageItem = {
+                startBlock: start,
+                endBlock: end,
+                totalBirths: pregnancyCount,
+                mommaMap: strMapToObj(mommaMap)
+            }
+            fs.readFile(storage, (err, data) => {
+                if (err) console.log("Error reading file " + storage + ": " + err);
+                let json = JSON.parse(data.toString());
+                json.push(start + ': ' + stats);
+
+                fs.writeFile(storage, JSON.stringify(json), (err) => {
+                    if (err) console.log("Error writing to file " + storage + ": " + err);
+                });
+            });
+        }
+    } catch (e) {
+        console.log("JSON parsing error: " + e);
+    }
+
 }
+// });
+// }
 
 interface DummyLog {
     address: string;
