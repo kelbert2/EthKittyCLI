@@ -4,9 +4,39 @@ build a program that takes a startingBlock and endingBlock as arguments and coun
 Need to add a config.json with {"id"=<infura project id>} to src.
  
 Smart contracts can emit events and write logs to the blockchain upon mining a transaction.
+
+# Initial Tests
+Corresponding to log found at 
+ https://etherscan.io/tx/0x1952402d33cc3f0d98b8a23db68c1e1724d4e534972cfe00a07e5fa5777559d1#eventlog
+ 
+blockNumber: 10195151
+
+ matronId: 548192
+
+ hex data: 
+* 0x000000000000000000000000093108180ea5e76b8d937fb7c445354c28a534d7
+*  00000000000000000000000000000000000000000000000000000000001d88f8
+*  0000000000000000000000000000000000000000000000000000000000085d60 <- matronId
+*  00000000000000000000000000000000000000000000000000000000001d888b
+*  00007ad8b29086580ce30d683dc421b92a585d01a5ef7198800ce54a58c6bdc4
+
+
+2 - 3
+2
+
+ 10 - 22 -> 10 - 20, 20 - 22
+23
+
+ 2 - 22 -> 2 - 10, 10 - 20, 20 - 22
+ 21
+
+ 2 - 20 -> 2 - 10, 10 - 20
+ 19
+
+
 # To Run
 npm run build
-npm run 
+npm run test
 
 # Resources
 Creating a CLI with Typescript:
@@ -29,7 +59,24 @@ https://hackernoon.com/understanding-ethereum-a-complete-guide-6f32ea8f5888
 
 https://developer.okta.com/blog/2019/06/18/command-line-app-with-nodejs
 
+In general, tokens on the blockchain are fungible. The value of every token is the same and,
+similar to cash, it doesn’t matter what token you receive. Because of this, blockchains track
+counts of tokens instead of the specific tokens themselves. This works well for things like stocks
+or currencies, but because CryptoKitties are genetically unique and breedable, we needed to
+create a non-fungible token environment.
 
+To mitigate this, we created a descending clock auction. Sellers choose a high opening bid, a
+minimum closing bid, and a timeframe for which they’d like their auction to run. Buyers are able
+to choose their purchase price along that spectrum by purchasing when the price aligns with
+their perceived value of the CryptoKitty being sold – as long as someone else doesn’t buy it
+before them. Buyers pay gas when they complete a purchase and sellers pay gas to initiate an
+auction.
+
+requesting
+request-promise
+https://github.com/io4/cryptokitties/blob/master/index.js
+cryptokitties-contrib
+https://github.com/scottie/cryptokats/blob/master/index.js
 
 https://gist.github.com/arpit/071e54b95a81d13cb29681407680794f
 ```Solidarity

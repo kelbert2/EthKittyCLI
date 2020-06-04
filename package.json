@@ -8,7 +8,7 @@
     "create": "npm run build && npm run test",
     "build": "tsc -p .",
     "test-hello": "sudo npm i -g && hello-kitty -n Kitty",
-    "test": "sudo npm i -g && kitten-stats -n -m",
+    "test": "sudo npm i -g && kitten-stats",
     "refresh": "rm -rf ./node_modules ./package-lock.json && npm install"
   },
   "keywords": [],

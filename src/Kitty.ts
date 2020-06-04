@@ -59,3 +59,60 @@ function getCooldwonTime(cooldownIndex: number) {
     }
 }
 
+
+// Ethereum
+// https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_getblockbyhash
+// curl -X POST --data '{"jsonrpc":"2.0","method":"eth_getBlockByNumber","params":["0x1b4", true],"id":1}
+// all in hex
+interface Block {
+    number: string | null; // null if pending
+    hash: string | null; // 32 bytes
+    parentHash: string;
+    nonce: string | null; // 8 bytes
+    sha3Uncles: string | null; // 32 bytes
+    logsBloom: string | null; // 256 bytes
+    transactionsRoot: string; // 32 bytes, root of transaction trie of the block
+    stateRoot: string; // 32 bytes, root of final state trie of block
+    receiptsRoot: string; // 32 bytes, root of receipts trie of block
+    miner: string; // 20 bytes
+    difficulty: string; // integer
+    totalDifficulty: string; // of the chain until this block
+    extraData: string;
+    size: string; // integer in bytes
+    gasLimit: string;
+    gasUsed: string; // total used of all transactions
+    timestamp: string;
+    transactions: Transactions[] | string[]; // or 32 byte hashes
+    uncles: string[]; // array of uncle hashes
+}
+// Request
+// curl -X POST --data '{"jsonrpc":"2.0","method":"eth_getTransactionByHash","params":["0x88df016429689c079f3b2f6ad39fa052532c56795b733da78a91ebe6a713944b"],"id":1}'
+interface Transactions {
+    blockHash: string | null; // 32 bytes, null if pending
+    blockNumber: string | null;
+    from: string; // 20 bytes, address of sender
+    gas: string; // gas provided by sender
+    gasPrice: string; // in Wei
+    hash: string; // 32 bytes
+    input: string; // data sent with transaction
+    nonce: string; // number of transactions made by sender prior to this
+    to: string | null; // 20 bytes, address of receiver, null if content creation transaction
+    transactionIndex: string | null; // integer of index position in block, null if pending
+    value: string; // value transfered in Wei
+    v: string; // ECDSA recovery id
+    r: string; // ECDSA signature r
+    s: string; // ECDSA signature s
+}
+
+interface Log {
+    address: string;
+    blockHash: string | null; // null if pending
+    blockNumber: number | null; // null if pending
+    data: string; // 64-bit parameters scrunched together
+    logIndex: number; // event index position within block
+    removed: boolean;
+    topics: string[];
+    transactionHash: string; // 32 bytes
+    transactionIndex: number; // 32 bytes
+    id: string;
+}
