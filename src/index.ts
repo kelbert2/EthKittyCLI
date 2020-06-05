@@ -12,9 +12,10 @@
 // Command-Line Interface
 import yargs from 'yargs';
 import Web3 from 'web3';
-import config from './config.json'; // infura project id
+import config from './config.json'; // infura project id, x-api-token for cryptokitties developers
 import fs from 'fs';
-const KITTIES_URL = 'https://api/cryptokitties.co';
+import axios from 'axios';
+const KITTIES_URL = 'https://public.api.cryptokitties.co/v1/kitties/'; // append kitty id to fetch
 const ADDRESS = "0x06012c8cf97BEaD5deAe237070F9587f8E7A266d";
 const BIRTH_TOPIC = "0x0a5311bd2a6608f08a180df2ee7c5946819a649b204b554bb8e39825b2c50ad5";
 
@@ -103,26 +104,23 @@ for (let blockNumberIter = options.s; blockNumberIter < options.e;) {
             let processed = false; // jump functions don't work inside read file
             console.log("looking between si and ei " + startIncrement + " and " + (end - 1));
 
-            fs.readFile(storage, (err, data) => {
-                if (err) {
-                    console.log("Error reading file " + storage + ": " + err);
-                } else {
-                    let json = JSON.parse(data.toString());
+            try {
+                let data = fs.readFileSync(storage)
+                let json = JSON.parse(data.toString());
 
-                    if (json[start] as StorageItem) {
-                        // Add to total stats
-                        if (json[start].endBlock === end - 1) {
-                            console.log("Found in file!");
-                            totalPregnancyCount += json[start].totalBirths;
-                            mergeObjectIntoMap(totalMommaMap, json[start].mommaMap);
-                            processed = true;
-                        }
+                if (json[startIncrement] as StorageItem) {
+                    // Add to total stats
+                    if (json[startIncrement].endBlock === end - 1) {
+                        totalPregnancyCount += json[startIncrement].totalBirths;
+                        mergeObjectIntoMap(totalMommaMap, json[startIncrement].mommaMap);
+                        processed = true;
                     }
                 }
-            });
+            } catch (err) {
+                console.log("Error reading file " + storage + ": " + err);
+            }
 
             if (!processed) {
-                console.log("Could not find in file")
                 queryInfura(startIncrement, end - 1, true);
             }
         }
@@ -140,13 +138,30 @@ let maxMatronId;
 for (const [key, value] of totalMommaMap.entries()) {
     if (!maxBirths || maxBirths < value) {
         maxBirths = value;
-        maxMatronId = key;
+        maxMatronId = parseInt("0x" + key); // convert from hex string to decimal. Stored as hex string to avoid excess conversions and maintain string keys in the map for easier JSON conversion.
     }
 }
 console.log("Max matron: " + maxMatronId + " with " + maxBirths);
 
-// TODO: Fetch kitty stats from api
-
+// const apiClient = axios.create({
+//     baseURL: KITTIES_URL,
+//     responseType: 'json',
+//     headers: {
+//         'x-api-token': 'ABC'
+//     }
+// });
+try {
+    // apiClient.get<Kitty>().then(res => console.log(res));
+    axios({
+        'method': 'GET',
+        'url': KITTIES_URL + maxMatronId,
+        'headers': {
+            'x-api-token': config.token
+        }
+    }).then((response) => console.log(response)).catch((err) => console.log("Error in api request: " + err));
+} catch (err) {
+    console.log("Error fetching momma's statistics: " + err);
+}
 
 // eth_getLogs( fromBlock, toBlock, topics [])
 // get log entries between the blocks that correspond to birth events
@@ -220,12 +235,8 @@ function queryInfura(start: number, end: number, write = true) {
     //         console.log("Error getting logs: " + err);
     //     }
 
-    let result: DummyLog[];
+    let result: DummyLog[]; // using dummy log with its extensive looping, get 69
 
-    // fs.readFile('./dummy_data.json', function (err, data) {
-    //     if (err) {
-    //         console.log("Error reading file " + storage + ": " + err);
-    //     } else {
     const data = fs.readFileSync('./dummy_data.json');
     console.log("Parsing dummy data");
     try {

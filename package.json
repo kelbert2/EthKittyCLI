@@ -19,6 +19,7 @@
     "kitten-stats": "./lib/index.js"
   },
   "dependencies": {
+    "axios": "^0.19.2",
     "web3": "^1.2.8",
     "yargs": "^15.3.1"
   },
