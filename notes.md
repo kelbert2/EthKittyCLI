@@ -33,6 +33,352 @@ blockNumber: 10195151
  2 - 20 -> 2 - 10, 10 - 20
  19
 
+ CryptoKitties API example response: 
+
+ ```
+ { status: 200,
+  statusText: 'OK',
+  headers:
+   { date: 'Fri, 05 Jun 2020 20:41:04 GMT',
+     'content-type': 'application/json',
+     'transfer-encoding': 'chunked',
+     connection: 'close',
+     'set-cookie':
+      [ '__cfduid=db8d8aa433a9a8b31f4dc3b40c38d616a1591389663; expires=Sun, 05-Jul-20 20:41:03 GMT; path=/; domain=.cryptokitties.co; HttpOnly; SameSite=Lax; Secure' ],
+     'access-control-allow-origin': '*',
+     vary: 'Accept-Encoding',
+     'x-request-id': 'e64cc1d4-bebe-48d5-8cfd-05be9c7fe2bb',
+     'cf-cache-status': 'DYNAMIC',
+     'cf-request-id': '0327d04a5200000fb3efa96200000001',
+     'expect-ct': 'max-age=604800, report-uri="https://report-uri.cloudflare.com/cdn-cgi/beacon/expect-ct"',
+     'strict-transport-security': 'max-age=15552000; includeSubDomains',
+     'x-content-type-options': 'nosniff',
+     server: 'cloudflare',
+     'cf-ray': '59ecb656e8770fb3-SJC' },
+  config:
+   { url: 'https://public.api.cryptokitties.co/v1/kitties/1393895',
+     method: 'get',
+     headers:
+      { Accept: 'application/json, text/plain, */*',
+        'x-api-token': 'AlB5RLpww6cdcRf_q7PID0Y0SWZSvrw5SGivYOkUo3Q',
+        'User-Agent': 'axios/0.19.2' },
+     transformRequest: [ [Function: transformRequest] ],
+     transformResponse: [ [Function: transformResponse] ],
+     timeout: 0,
+     adapter: [Function: httpAdapter],
+     xsrfCookieName: 'XSRF-TOKEN',
+     xsrfHeaderName: 'X-XSRF-TOKEN',
+     maxContentLength: -1,
+     validateStatus: [Function: validateStatus],
+     data: undefined },
+  request:
+   ClientRequest {
+     _events:
+      { socket: [Function],
+        abort: [Function],
+        aborted: [Function],
+        error: [Function],
+        timeout: [Function],
+        prefinish: [Function: requestOnPrefinish] },
+     _eventsCount: 6,
+     _maxListeners: undefined,
+     output: [],
+     outputEncodings: [],
+     outputCallbacks: [],
+     outputSize: 0,
+     writable: true,
+     _last: true,
+     upgrading: false,
+     chunkedEncoding: false,
+     shouldKeepAlive: false,
+     useChunkedEncodingByDefault: false,
+     sendDate: false,
+     _removedConnection: false,
+     _removedContLen: false,
+     _removedTE: false,
+     _contentLength: 0,
+     _hasBody: true,
+     _trailer: '',
+     finished: true,
+     _headerSent: true,
+     socket:
+      TLSSocket {
+        _tlsOptions: [Object],
+        _secureEstablished: true,
+        _securePending: false,
+        _newSessionPending: false,
+        _controlReleased: true,
+        _SNICallback: null,
+        servername: 'public.api.cryptokitties.co',
+        npnProtocol: false,
+        alpnProtocol: false,
+        authorized: true,
+        authorizationError: null,
+        encrypted: true,
+        _events: [Object],
+        _eventsCount: 8,
+        connecting: false,
+        _hadError: false,
+        _handle: null,
+        _parent: null,
+        _host: 'public.api.cryptokitties.co',
+        _readableState: [ReadableState],
+        readable: false,
+        _maxListeners: undefined,
+        _writableState: [WritableState],
+        writable: false,
+        _bytesDispatched: 217,
+        _sockname: null,
+        _pendingData: null,
+        _pendingEncoding: '',
+        allowHalfOpen: false,
+        server: undefined,
+        _server: null,
+        ssl: null,
+        _requestCert: true,
+        _rejectUnauthorized: true,
+        parser: null,
+        _httpMessage: [Circular],
+        _idleNext: null,
+        _idlePrev: null,
+        _idleTimeout: -1,
+        [Symbol(res)]: [TLSWrap],
+        [Symbol(asyncId)]: 37,
+        [Symbol(lastWriteQueueSize)]: 0,
+        [Symbol(bytesRead)]: 3689,
+        [Symbol(connect-options)]: [Object] },
+     connection:
+      TLSSocket {
+        _tlsOptions: [Object],
+        _secureEstablished: true,
+        _securePending: false,
+        _newSessionPending: false,
+        _controlReleased: true,
+        _SNICallback: null,
+        servername: 'public.api.cryptokitties.co',
+        npnProtocol: false,
+        alpnProtocol: false,
+        authorized: true,
+        authorizationError: null,
+        encrypted: true,
+        _events: [Object],
+        _eventsCount: 8,
+        connecting: false,
+        _hadError: false,
+        _handle: null,
+        _parent: null,
+        _host: 'public.api.cryptokitties.co',
+        _readableState: [ReadableState],
+        readable: false,
+        _maxListeners: undefined,
+        _writableState: [WritableState],
+        writable: false,
+        _bytesDispatched: 217,
+        _sockname: null,
+        _pendingData: null,
+        _pendingEncoding: '',
+        allowHalfOpen: false,
+        server: undefined,
+        _server: null,
+        ssl: null,
+        _requestCert: true,
+        _rejectUnauthorized: true,
+        parser: null,
+        _httpMessage: [Circular],
+        _idleNext: null,
+        _idlePrev: null,
+        _idleTimeout: -1,
+        [Symbol(res)]: [TLSWrap],
+        [Symbol(asyncId)]: 37,
+        [Symbol(lastWriteQueueSize)]: 0,
+        [Symbol(bytesRead)]: 3689,
+        [Symbol(connect-options)]: [Object] },
+     _header: 'GET /v1/kitties/1393895 HTTP/1.1\r\nAccept: application/json, text/plain, */*\r\nx-api-token: AlB5RLpww6cdcRf_q7PID0Y0SWZSvrw5SGivYOkUo3Q\r\nUser-Agent: axios/0.19.2\r\nHost: public.api.cryptokitties.co\r\nConnection: close\r\n\r\n',
+     _onPendingData: [Function: noopPendingOutput],
+     agent:
+      Agent {
+        _events: [Object],
+        _eventsCount: 1,
+        _maxListeners: undefined,
+        defaultPort: 443,
+        protocol: 'https:',
+        options: [Object],
+        requests: {},
+        sockets: [Object],
+        freeSockets: {},
+        keepAliveMsecs: 1000,
+        keepAlive: false,
+        maxSockets: Infinity,
+        maxFreeSockets: 256,
+        maxCachedSessions: 100,
+        _sessionCache: [Object] },
+     socketPath: undefined,
+     timeout: undefined,
+     method: 'GET',
+     path: '/v1/kitties/1393895',
+     _ended: true,
+     res:
+      IncomingMessage {
+        _readableState: [ReadableState],
+        readable: false,
+        _events: [Object],
+        _eventsCount: 3,
+        _maxListeners: undefined,
+        socket: [TLSSocket],
+        connection: [TLSSocket],
+        httpVersionMajor: 1,
+        httpVersionMinor: 1,
+        httpVersion: '1.1',
+        complete: true,
+        headers: [Object],
+        rawHeaders: [Array],
+        trailers: {},
+        rawTrailers: [],
+        upgrade: false,
+        url: '',
+        method: null,
+        statusCode: 200,
+        statusMessage: 'OK',
+        client: [TLSSocket],
+        _consuming: true,
+        _dumped: false,
+        req: [Circular],
+        responseUrl: 'https://public.api.cryptokitties.co/v1/kitties/1393895',
+        redirects: [],
+        read: [Function] },
+     aborted: undefined,
+     timeoutCb: null,
+     upgradeOrConnect: false,
+     parser: null,
+     maxHeadersCount: null,
+     _redirectable:
+      Writable {
+        _writableState: [WritableState],
+        writable: true,
+        _events: [Object],
+        _eventsCount: 2,
+        _maxListeners: undefined,
+        _options: [Object],
+        _redirectCount: 0,
+        _redirects: [],
+        _requestBodyLength: 0,
+        _requestBodyBuffers: [],
+        _onNativeResponse: [Function],
+        _currentRequest: [Circular],
+        _currentUrl: 'https://public.api.cryptokitties.co/v1/kitties/1393895' },
+     [Symbol(isCorked)]: false,
+     [Symbol(outHeadersKey)]:
+      { accept: [Array],
+        'x-api-token': [Array],
+        'user-agent': [Array],
+        host: [Array] } },
+  data:
+   { id: 1393895,
+     name: 'Miss Perrfect',
+     bio: 'Hello, lover. You know that feeling you get when a Kitty is beautiful, not for their outward Cattributes, but for their inner hash? That\'s me, #{name}, the original catty cat. Some would say my heart is decentralized, but all I know for sure is the only thing more eternal than the blockchain is my love for you.',
+     image_url: 'https://img.cryptokitties.co/0x06012c8cf97bead5deae237070f9587f8e7a266d/1393895.png',
+     image_url_cdn: 'https://img.cn.cryptokitties.co/0x06012c8cf97bead5deae237070f9587f8e7a266d/1393895.png',
+     image_url_png: 'https://img.cryptokitties.co/0x06012c8cf97bead5deae237070f9587f8e7a266d/1393895.png',
+     image_path: '',
+     generation: 13,
+     created_at: '2019-02-15T06:27:36Z',
+     color: 'cyan',
+     is_fancy: true,
+     is_exclusive: false,
+     fancy_type: 'MissPurrfect',
+     language: 'en',
+     kitty_type: 'fancy',
+     enhanced_cattributes: [],
+     status:
+      { cooldown: 1591383102438,
+        cooldown_index: 8,
+        is_ready: true,
+        is_gestating: false },
+     purrs: { count: 4, is_purred: false },
+     watchlist: { count: 0, is_watchlisted: false },
+     hatched: true,
+     is_prestige: false,
+     prestige_type: null,
+     prestige_ranking: null,
+     fancy_ranking: 1276,
+     prestige_time_limit: null,
+     auction: { seller: null },
+     matron:
+      { id: 1384192,
+        name: 'Miss Purrfect',
+        image_url: 'https://img.cryptokitties.co/0x06012c8cf97bead5deae237070f9587f8e7a266d/1384192.png',
+        image_url_cdn: 'https://img.cn.cryptokitties.co/0x06012c8cf97bead5deae237070f9587f8e7a266d/1384192.png',
+        image_url_png: 'https://img.cryptokitties.co/0x06012c8cf97bead5deae237070f9587f8e7a266d/1384192.png',
+        generation: 7,
+        created_at: '2019-02-10T09:20:27Z',
+        color: 'dahlia',
+        is_fancy: true,
+        is_exclusive: false,
+        fancy_type: 'MissPurrfect',
+        language: 'en',
+        status: [Object],
+        owner: [Object] },
+     sire:
+      { id: 1386694,
+        name: 'Miss Purrfect',
+        image_url: 'https://img.cryptokitties.co/0x06012c8cf97bead5deae237070f9587f8e7a266d/1386694.png',
+        image_url_cdn: 'https://img.cn.cryptokitties.co/0x06012c8cf97bead5deae237070f9587f8e7a266d/1386694.png',
+        image_url_png: 'https://img.cryptokitties.co/0x06012c8cf97bead5deae237070f9587f8e7a266d/1386694.png',
+        generation: 12,
+        created_at: '2019-02-11T09:50:00Z',
+        color: 'cyan',
+        is_fancy: true,
+        is_exclusive: false,
+        fancy_type: 'MissPurrfect',
+        language: 'en',
+        status: [Object],
+        owner: [Object] },
+     owner:
+      { address: '0x7b8f5e737c576c5badb4d9f5a080ba544f4c336f',
+        hasDapper: false },
+     tricks: [],
+     hatcher:
+      { address: '0x0f794071c68dd16f8fd424808fcb20780c575576',
+        image: '15',
+        nickname: 'JaceMW | Discord #4122',
+        hasDapper: false },
+     is_special_edition: false,
+     offer:
+      { id: '',
+        expires_at: null,
+        bidder_address: '',
+        eth_price: 0,
+        status: '',
+        accepted: false,
+        rejected: true,
+        approved: false } } }
+```
+
+"cattributes": [{
+  "description": "orangesoda",
+  "type": null
+ }, {
+  "description": "simple",
+  "type": null
+ }, {
+  "description": "granitegrey",
+  "type": null
+ }, {
+  "description": "coffee",
+  "type": null
+ }, {
+  "description": "pouty",
+  "type": null
+ }, {
+  "description": "totesbasic",
+  "type": null
+ }, {
+  "description": "topaz",
+  "type": null
+ }, {
+  "description": "cymric",
+  "type": null
+ }]
 
 # To Run
 npm run build
@@ -72,6 +418,10 @@ their perceived value of the CryptoKitty being sold – as long as someone else 
 before them. Buyers pay gas when they complete a purchase and sellers pay gas to initiate an
 auction.
 
+Think of a blockchain as a massive public list of transactions. At its simplest, a single transaction would represent a transfer of something, perhaps a bitcoin or a cryptokitty, from one person to another. Every time a bunch of new transactions occur, we add another ‘block’ to the ‘chain’ containing these new transactions. This same public list is kept and updated by lots of different parties all around the world. This makes it very difficult for one single entity to try and manipulate this transaction list and therefore ensures the integrity of the list.
+
+ABI (Application Binary Interface) as adapter to interact with the compiled Ethereum smart contract that the Ethereum virtual Machine (EVM) executes.
+
 requesting
 request-promise
 https://github.com/io4/cryptokitties/blob/master/index.js
@@ -104,11 +454,6 @@ class Cattribute {
           "position": 31,
           "kittyId": 129
 }
-
-    birth: timestamp;
-    generation: number;
-    genes
-    _kittyId
 
 
 

@@ -6,11 +6,14 @@
 // Command-Line Interface
 import yargs from 'yargs';
 import Web3 from 'web3';
+
 import axios from 'axios';
 import fs from 'fs';
 import config from './config.json'; // infura project id, x-api-token for cryptokitties developers
+import { CORE_ABI } from './contract';
+import * as abi from './abi.json';
 
-const ADDRESS = "0x06012c8cf97BEaD5deAe237070F9587f8E7A266d";
+const ADDRESS = '0x06012c8cf97BEaD5deAe237070F9587f8E7A266d';
 const BIRTH_TOPIC = "0x0a5311bd2a6608f08a180df2ee7c5946819a649b204b554bb8e39825b2c50ad5";
 const KITTIES_URL = 'https://public.api.cryptokitties.co/v1/kitties/'; // append kitty id to fetch
 const RANGE_SIZE = 10;
@@ -28,13 +31,13 @@ const options = yargs
         alias: "start",
         describe: "starting block",
         type: "number",
-        default: 10207400
+        default: 10207402
     })
     .option("e", {
         alias: "end",
         describe: "ending block",
         type: "number",
-        default: 10207461
+        default: 10207460
     })
     .option("n", {
         alias: "no-file",
@@ -51,12 +54,11 @@ const options = yargs
     .argv;
 // default blocks: 6607985, 7028323
 
-// TODO: make file writing and reading optional 
 // Establish storage file =================================================
 let storage = options.f;
 let useFile = !options.n;
 let verbose = options.v;
-let difference = Math.abs(options.e - options.s);
+let difference = 0;
 
 if (useFile) {
     try {
@@ -86,38 +88,42 @@ searchBlocks(options.s, options.e).then(() => {
     console.log("Pregnancy Count: " + totalPregnancyCount);
     // get max momma
     let maxBirths;
-    let maxMatronId: number[] = []; // in case there's a tie
+    let maxMatronId: string[] = []; // in case there's a tie
     for (const [key, value] of totalMommaMap.entries()) {
         if (!maxBirths || maxBirths <= value) {
             if (maxBirths === value) {
-                maxMatronId.push(parseInt("0x" + key)); // convert from hex string to decimal. Stored as hex string in file to avoid excess conversions and maintain string keys in the map for easier JSON conversion.
+                maxMatronId.push(key);
             } else {
                 maxBirths = value;
-                maxMatronId = [parseInt("0x" + key)];
+                maxMatronId = [key];
             }
         }
     }
 
     for (let i = 0; i < maxMatronId.length; i++) {
-        console.log("Biggest momma id: " + maxMatronId[i] + " with " + maxBirths + " births within range.");
-
+        console.log("Biggest momma id: " + parseInt("0x" + maxMatronId[i]) + " with " + maxBirths + " births within range.");
+        console.log("hex value: " + maxMatronId[i]);
         // TODO: maybe await on the result of this or add a finally with birth stats so the all of the array's results from above don't appear before any api query result
-        // const apiClient = axios.create({
-        //     baseURL: KITTIES_URL,
-        //     responseType: 'json',
-        //     headers: {
-        //         'x-api-token': 'ABC'
-        //     }
-        // });
-        // apiClient.get<Kitty>().then(res => console.log(res));
+
+
+        const kittyContract = new web3.eth.Contract(CORE_ABI, ADDRESS);
+        kittyContract.methods.getKitty("0x" + maxMatronId[i]).call()
+            .then((res: any) => {
+                console.log("response from getKitty");
+                console.log(res);
+            })
+            .catch((err: any) => {
+                console.log("Error querying getKitty: " + err);
+            });
+
         axios({
             'method': 'GET',
-            'url': KITTIES_URL + maxMatronId[i],
+            'url': KITTIES_URL + parseInt("0x" + maxMatronId[i]),
             'headers': {
                 'x-api-token': config.token
             }
         })
-            .then((response) => console.log(response))
+            .then((response) => console.log(response.data.name))
             .catch((err) => console.log("Error in api request: " + err));
     }
 });
@@ -132,10 +138,37 @@ interface StorageItem {
     totalBirths: number;
     mommaMap: MapObject<number>;
 }
+interface KittyResponse {
+    status: number,
+    data:
+    {
+        id: number,
+        name: string,
+        generation: number,
+        created_at: string,
+    }
+}
+interface KittyEth {
+    isGestating: boolean;
+    isReady: boolean;
+    cooldownIndex: string;
+    nextActionAt: string;
+    siringWithId: string;
+    birthTime: string;
+    matronId: string;
+    sireId: string;
+    generation: string;
+    genes: string;
+}
 interface Kitty {
     birth: Date;
+    name: string;
     generation: number;
     genes: string; // web3 receives uint256 as strings, or could use BigNumber.js to parse
+    color: string;
+    kittyType: string;
+    enhancedCattributes: string[];
+    isExclusive: boolean;
 }
 
 function mergeObjectIntoMap(to: Map<string, number>, from: MapObject<number>) {
@@ -162,29 +195,28 @@ async function searchBlocks(startBlock: number, endBlock: number) {
 
     for (let blockNumberIter = startBlock; blockNumberIter < endBlock;) {
         let start = blockNumberIter;
-        let startIncrementDifference = start % RANGE_SIZE; // if start is rangeSize, will just get rangeSize + start, so need to check so will get start instead
-        // let startIncrement = (startIncrementDifference === 0) ? start : (rangeSize - startIncrementDifference) + start; // next higher than start that is a stored increment
-        let startIncrement = RANGE_SIZE - startIncrementDifference + start;
-        let end = (startIncrement + RANGE_SIZE) > endBlock ? endBlock : startIncrement + RANGE_SIZE;
+        let incrementDifference = start % RANGE_SIZE; // if start is rangeSize, will just get rangeSize + start, so need to check so will get start instead
+        let increment = (incrementDifference === 0) ? start : RANGE_SIZE - incrementDifference + start; // next higher than start that is a stored increment unless start is at an increment
+        let end = (increment + RANGE_SIZE) > endBlock ? endBlock : increment + RANGE_SIZE;
 
-        if (verbose) console.log((start - difference) + " - " + (startIncrement - difference) + " - " + (end - difference));
+        if (verbose) console.log((start - difference) + " - " + (increment - difference) + " - " + (end - difference));
 
         // If too small for an increment that would be stored in the storage file
         // ideally will only have to get logs for the first < rangeSize and last < rangeSize, as the rest of the data will be in the file.
-        if (start < end && end < startIncrement) {
+        if (start < end && end < increment) {
             if (verbose) console.log("looking between blocks " + start + " and " + end + " with no writing to file.");
             await queryInfura(start, end, false);
         } else {
-            // Stats from start to startIncrement
-            if (start < startIncrement && startIncrement < end) {
-                if (verbose) console.log("looking between blocks " + start + " and " + (startIncrement - 1));
-                await checkFile(start, startIncrement);
+            // Stats from start to increment, if start itself is not at an increment
+            if (start < increment && increment < end) {
+                if (verbose) console.log("looking between blocks without writing" + start + " and " + (increment - 1));
+                await queryInfura(start, increment - 1, false); // in order to avoid overlap with next call, subtract one here.
             }
 
-            // Stats from startIncrement to endIncrement
-            if (end > startIncrement) {
-                if (verbose) console.log("looking between blocks " + startIncrement + " and " + (end - 1));
-                await checkFile(startIncrement, end);
+            // Stats from increment to end
+            if (end > increment) {
+                if (verbose) console.log("looking between blocks " + increment + " and " + (end - 1));
+                await checkFile(increment, end);
             }
         }
 
