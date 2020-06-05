@@ -78,13 +78,12 @@ let totalMommaMap = new Map<string, number>();
 // https://web3js.readthedocs.io/en/v1.2.7/web3-eth.html#getpastlogs
 for (let blockNumberIter = options.s; blockNumberIter < options.e;) {
     let start = blockNumberIter;
-    let end = (start + rangeSize > options.e) ? options.e : start + rangeSize;
-
     let startIncrementDifference = start % rangeSize; // if start is rangeSize, will just get rangeSize + start, so need to check so will get start instead
-    let startIncrement = (startIncrementDifference === 0) ? start : (rangeSize - startIncrementDifference) + start; // next higher than start that is a stored increment
-    let endIncrement = end - end % rangeSize; // next lower than end that is a stored increment, can be 0
+    // let startIncrement = (startIncrementDifference === 0) ? start : (rangeSize - startIncrementDifference) + start; // next higher than start that is a stored increment
+    let startIncrement = rangeSize - startIncrementDifference + start;
+    let end = (startIncrement + rangeSize) > options.e ? options.e : startIncrement + rangeSize;
 
-    console.log(start + " - " + end + ", " + startIncrement + " - " + endIncrement);
+    console.log(start + " - " + startIncrement + " - " + end);
     // start <= startIncrement
     // endIncrement < end
 
@@ -92,7 +91,6 @@ for (let blockNumberIter = options.s; blockNumberIter < options.e;) {
         console.log("looking between s and e " + start + " and " + end);
         queryInfura(start, end, false);
     } else {
-
         // Stats from start to startIncrement
         if (start < startIncrement && startIncrement < end) {
             console.log("looking between s and si " + start + " and " + (startIncrement - 1));
@@ -100,10 +98,10 @@ for (let blockNumberIter = options.s; blockNumberIter < options.e;) {
         }
 
         // Stats from startIncrement to endIncrement
-        if (endIncrement > startIncrement) {
+        if (end > startIncrement) {
             // check if file has stats for this range
             let processed = false; // jump functions don't work inside read file
-            console.log("looking between si and ei " + startIncrement + " and " + (endIncrement - 1));
+            console.log("looking between si and ei " + startIncrement + " and " + (end - 1));
 
             fs.readFile(storage, (err, data) => {
                 if (err) {
@@ -113,7 +111,7 @@ for (let blockNumberIter = options.s; blockNumberIter < options.e;) {
 
                     if (json[start] as StorageItem) {
                         // Add to total stats
-                        if (json[start].endBlock === endIncrement) {
+                        if (json[start].endBlock === end - 1) {
                             console.log("Found in file!");
                             totalPregnancyCount += json[start].totalBirths;
                             mergeObjectIntoMap(totalMommaMap, json[start].mommaMap);
@@ -125,18 +123,12 @@ for (let blockNumberIter = options.s; blockNumberIter < options.e;) {
 
             if (!processed) {
                 console.log("Could not find in file")
-                queryInfura(startIncrement, endIncrement - 1, true);
+                queryInfura(startIncrement, end - 1, true);
             }
         }
-
-        // Stats from endIncrement to end will be covered the next round
-        // if (start < endIncrement && endIncrement < end) {
-        //     console.log("looking between ei and e " + endIncrement + " and " + (end - 1));
-        //     queryInfura(endIncrement, end - 1, false);
-        // }
     }
 
-    blockNumberIter = endIncrement;
+    blockNumberIter = end;
 }
 
 console.log("Pregnancy Count: " + totalPregnancyCount);
@@ -264,20 +256,29 @@ function queryInfura(start: number, end: number, write = true) {
             // write statistics to file so won't have to call for the same range again
             console.log("writing " + pregnancyCount + " births to file.");
             let stats: StorageItem = {
-                startBlock: start,
-                endBlock: end,
-                totalBirths: pregnancyCount,
-                mommaMap: strMapToObj(mommaMap)
+                "startBlock": start,
+                "endBlock": end,
+                "totalBirths": pregnancyCount,
+                "mommaMap": strMapToObj(mommaMap)
             }
-            fs.readFile(storage, (err, data) => {
-                if (err) console.log("Error reading file " + storage + ": " + err);
+            // fs.readFile(storage, (err, data) => {
+            //     if (err) console.log("Error reading file " + storage + ": " + err);
+            try {
+                let data = fs.readFileSync(storage);
                 let json = JSON.parse(data.toString());
-                json.push(start + ': ' + stats);
 
-                fs.writeFile(storage, JSON.stringify(json), (err) => {
-                    if (err) console.log("Error writing to file " + storage + ": " + err);
-                });
-            });
+                // TODO: Right now need the file to be [] at start - find a way to check if empty first so can create the array to push to
+                if (!json[start]) {
+                    json[start] = stats;
+
+                    fs.writeFile(storage, JSON.stringify(json), (err) => {
+                        if (err) console.log("Error writing to file " + storage + ": " + err);
+                    });
+                }
+            } catch (e) {
+                console.log("Error writing to storage: " + e);
+            }
+            // });
         }
     } catch (e) {
         console.log("JSON parsing error: " + e);
