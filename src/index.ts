@@ -2,6 +2,7 @@
 
 // TODO
 // Add querying of cryptokitties API to get relevant stats on the biggest momma
+// Refactor increment logic
 
 // Command-Line Interface
 import yargs from 'yargs';
@@ -31,7 +32,7 @@ const options = yargs
         alias: "start",
         describe: "starting block",
         type: "number",
-        default: 10207402
+        default: 10207400
     })
     .option("e", {
         alias: "end",
@@ -72,7 +73,7 @@ if (useFile) {
 
 
 let web3: Web3 = new Web3(new Web3.providers.HttpProvider("https://mainnet.infura.io/v3/" + config.id)); // http://localhost:8545 for local
-
+const kittyContract = new web3.eth.Contract(CORE_ABI, ADDRESS);
 let totalPregnancyCount = 0;
 let totalMommaMap = new Map<string, number>();
 
@@ -85,9 +86,9 @@ let totalMommaMap = new Map<string, number>();
 
 // https://web3js.readthedocs.io/en/v1.2.7/web3-eth.html#getpastlogs
 searchBlocks(options.s, options.e).then(() => {
-    console.log("Pregnancy Count: " + totalPregnancyCount);
+    console.log("Number of pregnancies within range: " + totalPregnancyCount);
     // get max momma
-    let maxBirths;
+    let maxBirths = 0;
     let maxMatronId: string[] = []; // in case there's a tie
     for (const [key, value] of totalMommaMap.entries()) {
         if (!maxBirths || maxBirths <= value) {
@@ -100,31 +101,50 @@ searchBlocks(options.s, options.e).then(() => {
         }
     }
 
-    for (let i = 0; i < maxMatronId.length; i++) {
-        console.log("Biggest momma id: " + parseInt("0x" + maxMatronId[i]) + " with " + maxBirths + " births within range.");
-        console.log("hex value: " + maxMatronId[i]);
-        // TODO: maybe await on the result of this or add a finally with birth stats so the all of the array's results from above don't appear before any api query result
+    if (maxMatronId.length > 0) {
+        if (maxMatronId.length > 1) {
+            console.log("Found some big mommas with " + maxBirths + " birth" + + (maxBirths > 1 ? "s " : " ") + "within range.");
+        } else {
+            console.log("Found a big momma with " + maxBirths + " birth" + (maxBirths > 1 ? "s " : " ") + "within range.");
+        }
 
+        for (let i = 0; i < maxMatronId.length; i++) {
+            let generation: number;
+            let birthTime: string;
 
-        const kittyContract = new web3.eth.Contract(CORE_ABI, ADDRESS);
-        kittyContract.methods.getKitty("0x" + maxMatronId[i]).call()
-            .then((res: any) => {
-                console.log("response from getKitty");
-                console.log(res);
+            axios({
+                'method': 'GET',
+                'url': KITTIES_URL + parseInt("0x" + maxMatronId[i]),
+                'headers': {
+                    'x-api-token': config.token
+                }
             })
-            .catch((err: any) => {
-                console.log("Error querying getKitty: " + err);
-            });
+                .then((response: KittyResponse) => {
 
-        axios({
-            'method': 'GET',
-            'url': KITTIES_URL + parseInt("0x" + maxMatronId[i]),
-            'headers': {
-                'x-api-token': config.token
-            }
-        })
-            .then((response) => console.log(response.data.name))
-            .catch((err) => console.log("Error in api request: " + err));
+                    console.log("The " + response.data.color + " " + response.data.kittyType + " " + response.data.name + " has enhanced cattributes:");
+                    console.log(response.data.enhancedCattributes);
+                })
+                .catch((err) => console.log("Error in api request: " + err))
+                .then(kittyContract.methods.getKitty("0x" + maxMatronId[i]).call()
+                    .then((res: KittyEth) => {
+                        console.log("Generation: " + res.generation);
+                        console.log("Birth: " + (new Date(res.birthTime)).toUTCString());
+
+                        console.log("Genes for cat with matronId " + parseInt("0x" + maxMatronId[i]) + ":");
+                        console.log(res.genes);
+                        // To decode the genome: 
+                        // https://medium.com/newtown-partners/cryptokitties-genome-mapping-6412136c0ae4
+                        // https://public.api.cryptokitties.co/v1/cattributes/eyes/12
+                        // or just plug in the id: https://kittycalc.co/read/?k1=462838&k2=461679
+                    })
+                    .catch((err: any) => {
+                        console.log("Error querying getKitty: " + err);
+                    })).then(() => {
+                        if (verbose) console.log("Matron id: " + parseInt("0x" + maxMatronId[i]))
+                    });
+        }
+    } else {
+        console.log("Found no mommas within range.");
     }
 });
 
@@ -139,13 +159,16 @@ interface StorageItem {
     mommaMap: MapObject<number>;
 }
 interface KittyResponse {
-    status: number,
-    data:
-    {
-        id: number,
-        name: string,
-        generation: number,
-        created_at: string,
+    status: number;
+    data: {
+        id: number;
+        name: string;
+        generation: number;
+        created_at: string;
+        color: string;
+        kittyType: string;
+        enhancedCattributes: string[];
+        isExclusive: boolean;
     }
 }
 interface KittyEth {
@@ -165,10 +188,6 @@ interface Kitty {
     name: string;
     generation: number;
     genes: string; // web3 receives uint256 as strings, or could use BigNumber.js to parse
-    color: string;
-    kittyType: string;
-    enhancedCattributes: string[];
-    isExclusive: boolean;
 }
 
 function mergeObjectIntoMap(to: Map<string, number>, from: MapObject<number>) {
@@ -193,33 +212,50 @@ async function searchBlocks(startBlock: number, endBlock: number) {
         startBlock = temp;
     }
 
+    // TODO: refactor logic
+    // Cases
+    // start < increment
+    // start = increment
+    // end = increment
+    // end > increment
+    // end < increment
     for (let blockNumberIter = startBlock; blockNumberIter < endBlock;) {
         let start = blockNumberIter;
         let incrementDifference = start % RANGE_SIZE; // if start is rangeSize, will just get rangeSize + start, so need to check so will get start instead
-        let increment = (incrementDifference === 0) ? start : RANGE_SIZE - incrementDifference + start; // next higher than start that is a stored increment unless start is at an increment
-        let end = (increment + RANGE_SIZE) > endBlock ? endBlock : increment + RANGE_SIZE;
+        // let increment = (incrementDifference === 0) ? start : RANGE_SIZE - incrementDifference + start; // next higher than start that is a stored increment unless start is at an increment
+        let nextIncrement = RANGE_SIZE - incrementDifference + start;
+        let nearestNextIncrement = (incrementDifference === 0) ? start : nextIncrement;
+        let end = (nextIncrement + RANGE_SIZE) > endBlock ? endBlock : nextIncrement + RANGE_SIZE;
 
-        if (verbose) console.log((start - difference) + " - " + (increment - difference) + " - " + (end - difference));
+        if (verbose) console.log((start - difference) + " - " + (nextIncrement - difference) + " - " + (end - difference));
 
         // If too small for an increment that would be stored in the storage file
         // ideally will only have to get logs for the first < rangeSize and last < rangeSize, as the rest of the data will be in the file.
-        if (start < end && end < increment) {
-            if (verbose) console.log("looking between blocks " + start + " and " + end + " with no writing to file.");
-            await queryInfura(start, end, false);
+        if (start <= end && end < nextIncrement) {
+            if (verbose) console.log("looking between blocks " + start + " and " + end);
+            
+            if (start === nearestNextIncrement && end === nextIncrement - 1) {
+                await checkFile(start, nextIncrement);
+            } else {
+                await queryInfura(start, end, false);
+            }
         } else {
             // Stats from start to increment, if start itself is not at an increment
-            if (start < increment && increment < end) {
-                if (verbose) console.log("looking between blocks without writing" + start + " and " + (increment - 1));
-                await queryInfura(start, increment - 1, false); // in order to avoid overlap with next call, subtract one here.
+            if (start < nextIncrement && nextIncrement < end) {
+                if (verbose) console.log("looking between blocks without writing" + start + " and " + (nextIncrement - 1));
+                await queryInfura(start, nextIncrement - 1, false); // in order to avoid overlap with next call, subtract one here.
             }
 
             // Stats from increment to end
-            if (end > increment) {
-                if (verbose) console.log("looking between blocks " + increment + " and " + (end - 1));
-                await checkFile(increment, end);
+            if (end > nextIncrement) {
+                if (verbose) console.log("looking between blocks " + nextIncrement + " and " + (end - 1));
+                await checkFile(nextIncrement, end);
+            } else if (end === nextIncrement) {
+                if (verbose) console.log("looking between blocks with no writing " + nextIncrement + " and " + (end));
+                await queryInfura(start, end, false);
             }
         }
-
+        // attempt at solving for edge case where end falls on an increment - don't want it to be skipped as increments are only counted when start = increment
         blockNumberIter = end;
     }
 }
@@ -277,15 +313,7 @@ function queryInfura(start: number, end: number, write = true) {
         if (verbose) console.log("Queried from Infura for blocks " + (start - difference) + " to " + (end - difference));
         console.log(result);
 
-        // let result: DummyLog[]; // using dummy log with its extensive looping, get 69
-
-        // const data = fs.readFileSync('./dummy_data.json');
-        // console.log("Parsing dummy data");
         try {
-            // let result = JSON.parse(data.toString());
-
-            // }).then(result => {
-            // for each log in the result
             for (let i = 0; i < result.length; i++) {
                 // chop off the first two 0x from the string, then divide into 64-character parameters
                 let data = result[i].data.substring(2).match(/[\s\S]{1,64}/g);
@@ -293,7 +321,7 @@ function queryInfura(start: number, end: number, write = true) {
                 let matronId = data ? data[2].replace(/^0+(?!$)/, "") : null;
                 // choosing not to parseInt to convert hex string (without a 0x prefix) to decimal number so can convert mommaMap to a json object with string keys
                 // will need to convert in order to get biggest momma kitty by id
-                if (verbose) console.log("found matronId: " + matronId);
+                if (verbose) console.log("Found matronId: 0x" + matronId);
                 if (matronId != null) {
                     let initialValue = mommaMap.get(matronId) ?? 0;
                     mommaMap.set(matronId, ++initialValue);
