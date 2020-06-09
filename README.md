@@ -93,7 +93,7 @@ Promise prom = web3.eth.getPastLogs({
 ```
 
 Such a query returns an array of logs, such as the one below, also found at
- https://etherscan.io/tx/0x1952402d33cc3f0d98b8a23db68c1e1724d4e534972cfe00a07e5fa5777559d1#eventlog. This log was triggered by multiple events but only one birth event associated with it: 
+ https://etherscan.io/tx/0x1952402d33cc3f0d98b8a23db68c1e1724d4e534972cfe00a07e5fa5777559d1#eventlog. This log was triggered by multiple events but has only one birth event associated with it: 
 ```JSON
 {
         "address": "0x06012c8cf97BEaD5deAe237070F9587f8E7A266d",
@@ -136,9 +136,9 @@ struct Kitty {
   uint16 generation; // max(matron.generation, sire.generation) + 1
 }
 ```
-The number of pregnancies a cat has had is not directly tracked, although the cooldown index can be used to determine the minimum number of times the kitty has bred, such that up to `13 - floor(generation/2)` births can be seen using this metric, as the cooldown time is capped at one week and will not increase past that. Kitties also are not restricted to being exclusively matrons or sires - so the number of pregnancies a kitty has had can only be counted within a block range, not through querying information on the kitty itself.
+The number of pregnancies a cat has had is not directly tracked, although the cooldown index can be used to determine the minimum number of times the kitty has bred, such that up to `13 - floor(generation/2)` births can be seen using this metric, as the cooldown time is capped at index 13's corresponding time period (one week) and will not increase past that. Kitties also are not restricted to being exclusively matrons or sires - so the number of pregnancies a kitty has had can only be counted within a block range by looking at births, not through querying information on a kitty itself.
 
-To get more information on the kitty, we send a query to the CryptoKitties API. 
+Once all births within a range have been tallied and the most popular matron found, there's still a lot we don't know. To get more information on the kitty, we send a query to the CryptoKitties API. 
 ```JavaScript
 {
   'method': 'GET',
