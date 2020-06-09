@@ -68,12 +68,12 @@ const web3: Web3 = new Web3(new Web3.providers.HttpProvider("https://mainnet.inf
 const kittyContract = new web3.eth.Contract(CORE_ABI, ADDRESS);
 
 // Get Statistics =========================================================
-let totalPregnancyCount = 0;
+let totalBirthCount = 0;
 let totalMommaMap = new Map<string, number>();
 
 searchBlocks(options.s, options.e).then(() => {
     console.log("");
-    console.log("Total number of pregnancies within range: " + totalPregnancyCount);
+    console.log("Total number of births within range: " + totalBirthCount);
 
     let maxBirths = 0;
     let genZeroBirths = 0;
@@ -130,7 +130,7 @@ searchBlocks(options.s, options.e).then(() => {
                 .then(() => {
                     console.log("");
 
-                    console.log("Matron ID: " + parseInt("0x" + maxMatronId[i]));
+                    console.log("ID: " + parseInt("0x" + maxMatronId[i]));
 
                     if (cryptoKittiesResponse && cryptoKittiesResponse.data) {
                         if (cryptoKittiesResponse.data.name) console.log("Name: " + cryptoKittiesResponse.data.name);
@@ -241,7 +241,7 @@ async function checkFile(start: number, end: number) {
                 let json = JSON.parse(data.toString());
                 if (json[start] as StorageItem) {
                     if (json[start].endBlock === end - 1) {
-                        totalPregnancyCount += json[start].totalBirths;
+                        totalBirthCount += json[start].totalBirths;
                         mergeObjectIntoMap(totalMommaMap, json[start].mommaMap);
                         processed = true;
                     }
@@ -262,7 +262,7 @@ async function checkFile(start: number, end: number) {
 // write should be true only if start and end are increments of RANGE_SIZE
 function queryInfura(start: number, end: number, write = true) {
     // only use if writing
-    let pregnancyCount = 0;
+    let birthCount = 0;
     let mommaMap = new Map<string, number>();
 
     if (verbose) console.log("Querying Infura to communicate with the blockchain for blocks " + start + " - " + end + "...");
@@ -286,21 +286,21 @@ function queryInfura(start: number, end: number, write = true) {
                 if (matronId != null) {
                     let initialValue = mommaMap.get(matronId) ?? 0;
                     mommaMap.set(matronId, ++initialValue);
-                    pregnancyCount++;
+                    birthCount++;
 
                     let totalInitialValue = totalMommaMap.get(matronId) ?? 0;
                     totalMommaMap.set(matronId, ++totalInitialValue);
-                    totalPregnancyCount++;
+                    totalBirthCount++;
                 }
             }
 
             if (useFile && write) {
                 // write statistics to file so won't have to call for the same range again
-                if (verbose) console.log("Writing " + pregnancyCount + " births to file for blocks " + start + " to " + end + ".");
+                if (verbose) console.log("Writing " + birthCount + " births to file for blocks " + start + " to " + end + ".");
                 let stats: StorageItem = {
                     "startBlock": start,
                     "endBlock": end,
-                    "totalBirths": pregnancyCount,
+                    "totalBirths": birthCount,
                     "mommaMap": strMapToObj(mommaMap)
                 }
                 try {
