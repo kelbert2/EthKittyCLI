@@ -276,7 +276,7 @@ https://public.api.cryptokitties.co/v1/cattributes/eyes/12
 By individual kitty id:
 https://kittycalc.co/read/?k1=462838&k2=461679
 
-# Resources
+# Additional Resources
 Creating a CLI:
 
 https://itnext.io/how-to-create-your-own-typescript-cli-with-node-js-1faf7095ef89
@@ -298,3 +298,7 @@ Operations:
 https://web3js.readthedocs.io/en/v1.2.7/web3-eth.html#getpastlogs
 
 https://hackernoon.com/understanding-ethereum-a-complete-guide-6f32ea8f5888
+
+Cryptokitties:
+
+https://blockgeeks.com/guides/cryptokitties/
