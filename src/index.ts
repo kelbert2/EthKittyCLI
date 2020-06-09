@@ -92,15 +92,16 @@ searchBlocks(options.s, options.e).then(() => {
 
     if (maxMatronId.length > 0) {
         if (maxMatronId.length > 1) {
-            console.log("Found some big mommas with " + maxBirths + " birth" + + ((maxBirths > 1) ? "s " : " ") + "within range.");
+            console.log("Found some big mommas with " + maxBirths + " birth" + ((maxBirths > 1) ? "s " : " ") + "within range.");
         } else {
             console.log("Found a big momma with " + maxBirths + " birth" + ((maxBirths > 1) ? "s " : " ") + "within range.");
         }
 
         for (let i = 0; i < maxMatronId.length; i++) {
             let generation: number, ethGeneration: string;
-            let birthTime: string, ethBirthTime: string;
+            let birthTimeUTC: string, ethTimestamp: string;
 
+            console.log("");
             axios({
                 'method': 'GET',
                 'url': KITTIES_URL + parseInt("0x" + maxMatronId[i]),
@@ -119,15 +120,15 @@ searchBlocks(options.s, options.e).then(() => {
                         console.log(response.data.enhancedCattributes);
                     }
                     generation = response.data.generation;
-                    birthTime = response.data.created_at;
+                    birthTimeUTC = response.data.created_at;
                 })
-                .catch((err) => console.error("Error querying CryptoKitties API: " + err))
-                .then(kittyContract.methods.getKitty("0x" + maxMatronId[i]).call()
+                .catch((err) => console.error("Error querying CryptoKitties API: " + err)) // using catch to continue execution even after error
+                .then(() => kittyContract.methods.getKitty("0x" + maxMatronId[i]).call()
                     .then((res: KittyEth) => {
                         if (verbose) console.log("Querying Ethereum Blockchain...");
 
                         ethGeneration = res.generation;
-                        ethBirthTime = res.birthTime;
+                        ethTimestamp = res.birthTime;
                         console.log("Genes for cat with matronId " + parseInt("0x" + maxMatronId[i]) + ":");
                         console.log(res.genes ?? "Not found.");
                         // To decode the genome: 
@@ -140,9 +141,7 @@ searchBlocks(options.s, options.e).then(() => {
                     }))
                 .then(() => {
                     console.log("Generation: " + ethGeneration ?? generation ?? "unknown.");
-                    console.log("Birth: " + ethBirthTime ? (new Date(ethBirthTime)).toUTCString() : birthTime ? (new Date(birthTime)).toUTCString() : "unknown");
-                    console.log(ethBirthTime);
-                    console.log(birthTime);
+                    console.log("Birth: " + (ethTimestamp ? (new Date(parseInt(ethTimestamp) * 1000)).toUTCString() : birthTimeUTC ? (new Date(birthTimeUTC)).toUTCString() : "unknown"));
                 });
         }
     } else {
