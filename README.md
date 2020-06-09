@@ -12,14 +12,15 @@ Add a `config.json` file to src with the following:
 ```
 Adding the CryptoKitties API token will return more information about the returned mothers, such as their name and primary color.
 
-For caching and easier retrieval of data, add a `json` file with `{}` in it or use the `storage.json` provided, which contains data for 1,000 block increments so Infura will not have to be queried repeatedly for the same ranges. You can specify a file not named `storage.json` in the current directory with `kitten-stats -f /path/to/file.json`.
+For caching and easier retrieval of data, add a `json` file or use the `storage.json` provided, which contains data for 1,000 block increments so Infura will not have to be queried repeatedly for the same ranges. You can specify a file not named `storage.json` in the current directory with `kitten-stats -f /path/to/file.json`.
 
 Then run the following commands:
 ```
+npm install
 npm run build
 sudo npm i -g
 ```
-This will compile the typescript files and install the command.
+This will compile the typescript files and install the command, making it available for use.
 
 To uninstall the scripts:
 ```

@@ -132,30 +132,40 @@ searchBlocks(options.s, options.e).then(() => {
 
                     console.log("Matron ID: " + parseInt("0x" + maxMatronId[i]));
 
-                    if (cryptoKittiesResponse.data.name) console.log("Name: " + cryptoKittiesResponse.data.name);
-                    if (cryptoKittiesResponse.data.color) console.log("Color: " + cryptoKittiesResponse.data.color);
-                    if (cryptoKittiesResponse.data.kittyType) console.log("Kitty type: " + cryptoKittiesResponse.data.kittyType);
-                    if (cryptoKittiesResponse.data.enhancedCattributes) {
-                        console.log("Enhanced cattributes: ");
-                        console.log(cryptoKittiesResponse.data.enhancedCattributes);
+                    if (cryptoKittiesResponse && cryptoKittiesResponse.data) {
+                        if (cryptoKittiesResponse.data.name) console.log("Name: " + cryptoKittiesResponse.data.name);
+                        if (cryptoKittiesResponse.data.color) console.log("Color: " + cryptoKittiesResponse.data.color);
+                        if (cryptoKittiesResponse.data.kittyType) console.log("Kitty type: " + cryptoKittiesResponse.data.kittyType);
+                        if (cryptoKittiesResponse.data.enhancedCattributes) {
+                            console.log("Enhanced cattributes: ");
+                            console.log(cryptoKittiesResponse.data.enhancedCattributes);
+                        }
                     }
+                    if (ethResponse) {
+                        console.log("Generation: " + ethResponse.generation ?? cryptoKittiesResponse.data.generation ?? "Unknown.");
+                        console.log("Birthday: " + (ethResponse.birthTime
+                            ? (new Date(parseInt(ethResponse.birthTime) * 1000)).toUTCString()
+                            : cryptoKittiesResponse.data.created_at
+                                ? (new Date(cryptoKittiesResponse.data.created_at)).toUTCString()
+                                : "unknown"));
 
-                    console.log("Generation: " + ethResponse.generation ?? cryptoKittiesResponse.data.generation ?? "Unknown.");
-                    console.log("Birthday: " + (ethResponse.birthTime
-                        ? (new Date(parseInt(ethResponse.birthTime) * 1000)).toUTCString()
-                        : cryptoKittiesResponse.data.created_at
-                            ? (new Date(cryptoKittiesResponse.data.created_at)).toUTCString()
-                            : "unknown"));
-
-                    console.log("Genes:");
-                    console.log(ethResponse.genes ?? "Not found.");
+                        console.log("Genes:");
+                        console.log(ethResponse.genes ?? "Not found.");
+                    }
                 }, (err) => {
                     console.error("Error retrieving statistics for matron ID: " + parseInt("0x" + maxMatronId[i]) + ". Error: " + err);
+                })
+                .catch((err) => {
+                    console.error("Error parsing statistics for matron ID: " + parseInt("0x" + maxMatronId[i]) + ". Error: " + err);
                 });
         }
     } else {
         console.log("Found no mommas within range.");
     }
+}, (err) => {
+    console.error("Searching blocks error: " + err);
+    console.error('Make sure that your src/config.json file has "id": <Infura Project ID> and "token": <CryptoKitties API token> strings.');
+    console.error("If using a file, make sure it is in the proper place, or run the command with -n for no-file");
 });
 
 // Helpers ================================================================
@@ -224,15 +234,17 @@ async function checkFile(start: number, end: number) {
 
     if (useFile) {
         try {
-            let data = fs.readFileSync(storage)
-            let json = JSON.parse(data.toString());
+            let data = fs.readFileSync(storage);
 
-            if (json[start] as StorageItem) {
-                if (verbose) console.log("Looking in file " + storage + "...");
-                if (json[start].endBlock === end - 1) {
-                    totalPregnancyCount += json[start].totalBirths;
-                    mergeObjectIntoMap(totalMommaMap, json[start].mommaMap);
-                    processed = true;
+            if (verbose) console.log("Looking in file " + storage + "...");
+            if (data && data.toString() !== "") {
+                let json = JSON.parse(data.toString());
+                if (json[start] as StorageItem) {
+                    if (json[start].endBlock === end - 1) {
+                        totalPregnancyCount += json[start].totalBirths;
+                        mergeObjectIntoMap(totalMommaMap, json[start].mommaMap);
+                        processed = true;
+                    }
                 }
             }
         } catch (err) {
@@ -241,6 +253,7 @@ async function checkFile(start: number, end: number) {
     }
 
     if (!processed) {
+        if (verbose && useFile) console.log("Not found in file.");
         await queryInfura(start, end - 1, true); // as the range is inclusive and don't want overlap, subtracking one
     }
 }
@@ -275,15 +288,15 @@ function queryInfura(start: number, end: number, write = true) {
                     mommaMap.set(matronId, ++initialValue);
                     pregnancyCount++;
 
-                     let totalInitialValue = totalMommaMap.get(matronId) ?? 0;
+                    let totalInitialValue = totalMommaMap.get(matronId) ?? 0;
                     totalMommaMap.set(matronId, ++totalInitialValue);
                     totalPregnancyCount++;
-                    }
+                }
             }
 
             if (useFile && write) {
                 // write statistics to file so won't have to call for the same range again
-                if (verbose) console.log("writing " + pregnancyCount + " births to file for blocks " + start + " to " + end);
+                if (verbose) console.log("Writing " + pregnancyCount + " births to file for blocks " + start + " to " + end + ".");
                 let stats: StorageItem = {
                     "startBlock": start,
                     "endBlock": end,
@@ -292,16 +305,22 @@ function queryInfura(start: number, end: number, write = true) {
                 }
                 try {
                     let data = fs.readFileSync(storage);
-                    let json = JSON.parse(data.toString());
+                    let json: any;
 
-                    // TODO: Right now need the file to be {} at start - find a way to check if empty first so can create the object to add to
+                    if (!data || data.toString() === "") {
+                        json = {};
+                    } else {
+                        json = JSON.parse(data.toString());
+                        if (!json) json = {};
+                    }
+
                     if (!json[start]) {
                         json[start] = stats;
 
                         fs.writeFileSync(storage, JSON.stringify(json));
                     }
                 } catch (e) {
-                    console.log("Error with file " + storage + ": " + e);
+                    console.log("Error writing to file " + storage + ": " + e);
                 }
             }
         } catch (e) {
