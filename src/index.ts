@@ -98,10 +98,9 @@ searchBlocks(options.s, options.e).then(() => {
         }
 
         for (let i = 0; i < maxMatronId.length; i++) {
-            let generation: number, ethGeneration: string;
-            let birthTimeUTC: string, ethTimestamp: string;
+            let cryptoKittiesResponse: KittyResponse;
+            let ethResponse: KittyEth;
 
-            console.log("");
             axios({
                 'method': 'GET',
                 'url': KITTIES_URL + parseInt("0x" + maxMatronId[i]),
@@ -112,36 +111,46 @@ searchBlocks(options.s, options.e).then(() => {
                 .then((response: KittyResponse) => {
                     if (verbose) console.log("Querying CryptoKitties API...");
 
-                    if (response.data.name) console.log("Name: " + response.data.name);
-                    if (response.data.color) console.log("Color: " + response.data.color);
-                    if (response.data.kittyType) console.log("Kitty type: " + response.data.kittyType);
-                    if (response.data.enhancedCattributes) {
-                        console.log("Enhanced cattributes: ");
-                        console.log(response.data.enhancedCattributes);
-                    }
-                    generation = response.data.generation;
-                    birthTimeUTC = response.data.created_at;
+                    cryptoKittiesResponse = response;
                 })
                 .catch((err) => console.error("Error querying CryptoKitties API: " + err)) // using catch to continue execution even after error
                 .then(() => kittyContract.methods.getKitty("0x" + maxMatronId[i]).call()
                     .then((res: KittyEth) => {
                         if (verbose) console.log("Querying Ethereum Blockchain...");
 
-                        ethGeneration = res.generation;
-                        ethTimestamp = res.birthTime;
-                        console.log("Genes for cat with matronId " + parseInt("0x" + maxMatronId[i]) + ":");
-                        console.log(res.genes ?? "Not found.");
-                        // To decode the genome: 
-                        // https://medium.com/newtown-partners/cryptokitties-genome-mapping-6412136c0ae4
-                        // https://public.api.cryptokitties.co/v1/cattributes/eyes/12
-                        // or just plug in the id: https://kittycalc.co/read/?k1=462838&k2=461679
+                        ethResponse = res;
                     })
                     .catch((err: any) => {
                         console.error("Error querying Ethereum blockchain: " + err);
                     }))
                 .then(() => {
-                    console.log("Generation: " + ethGeneration ?? generation ?? "unknown.");
-                    console.log("Birth: " + (ethTimestamp ? (new Date(parseInt(ethTimestamp) * 1000)).toUTCString() : birthTimeUTC ? (new Date(birthTimeUTC)).toUTCString() : "unknown"));
+                    console.log("");
+
+                    console.log("Matron ID: " + parseInt("0x" + maxMatronId[i]));
+
+                    if (cryptoKittiesResponse.data.name) console.log("Name: " + cryptoKittiesResponse.data.name);
+                    if (cryptoKittiesResponse.data.color) console.log("Color: " + cryptoKittiesResponse.data.color);
+                    if (cryptoKittiesResponse.data.kittyType) console.log("Kitty type: " + cryptoKittiesResponse.data.kittyType);
+                    if (cryptoKittiesResponse.data.enhancedCattributes) {
+                        console.log("Enhanced cattributes: ");
+                        console.log(cryptoKittiesResponse.data.enhancedCattributes);
+                    }
+
+                    console.log("Generation: " + ethResponse.generation ?? cryptoKittiesResponse.data.generation ?? "Unknown.");
+                    console.log("Birthday: " + (ethResponse.birthTime
+                        ? (new Date(parseInt(ethResponse.birthTime) * 1000)).toUTCString()
+                        : cryptoKittiesResponse.data.created_at
+                            ? (new Date(cryptoKittiesResponse.data.created_at)).toUTCString()
+                            : "unknown"));
+                    // ethResponse.birthTime is a timestamp string
+                    // cryptoKittiesResponse.data.created_at is a UTC string
+
+                    console.log("Genes:");
+                    console.log(ethResponse.genes ?? "Not found.");
+                    // To decode the genome: 
+                    // https://medium.com/newtown-partners/cryptokitties-genome-mapping-6412136c0ae4
+                    // https://public.api.cryptokitties.co/v1/cattributes/eyes/12
+                    // or just plug in the id: https://kittycalc.co/read/?k1=462838&k2=461679
                 });
         }
     } else {
