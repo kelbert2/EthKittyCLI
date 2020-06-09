@@ -20,8 +20,7 @@
   },
   "bin": {
     "hello-kitty": "./lib/test.js",
-    "kitten-stats": "./lib/index.js",
-    "dummy-test": "./lib/indexWithDummyFile.js"
+    "kitten-stats": "./lib/index.js"
   },
   "dependencies": {
     "axios": "^0.19.2",
