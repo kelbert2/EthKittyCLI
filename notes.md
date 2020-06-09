@@ -5,6 +5,9 @@ Need to add a config.json with {"id"=<infura project id>} to src.
  
 Smart contracts can emit events and write logs to the blockchain upon mining a transaction.
 
+topics: compute signature of event with keccak256(“Birth(address,uint256,uint256,uint256,uint256)”) =
+0x0a5311bd2a6608f08a180df2ee7c5946819a649b204b554bb8e39825b2c50ad5
+
 # Initial Tests
 Corresponding to log found at 
  https://etherscan.io/tx/0x1952402d33cc3f0d98b8a23db68c1e1724d4e534972cfe00a07e5fa5777559d1#eventlog
@@ -21,17 +24,7 @@ blockNumber: 10195151
 *  00007ad8b29086580ce30d683dc421b92a585d01a5ef7198800ce54a58c6bdc4
 
 
-2 - 3
-2
 
- 10 - 22 -> 10 - 20, 20 - 22
-23
-
- 2 - 22 -> 2 - 10, 10 - 20, 20 - 22
- 21
-
- 2 - 20 -> 2 - 10, 10 - 20
- 19
 
  CryptoKitties API example response: 
 
@@ -396,6 +389,12 @@ https://medium.com/block-science/exploring-cryptokitties-part-1-data-extraction-
 And verified here:
 
 https://etherscan.io/address/0x06012c8cf97bead5deae237070f9587f8e7a266d#events
+
+Operations:
+
+https://web3js.readthedocs.io/en/v1.2.7/web3-eth.html#getpastlogs
+
+
 
 
 https://medium.com/makersplace/are-you-a-maker-join-us-b53e5d9e5280
