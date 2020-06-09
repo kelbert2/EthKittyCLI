@@ -92,7 +92,7 @@ Promise prom = web3.eth.getPastLogs({
 ```
 
 Such a query returns an array of logs, such as the one below, also found at
- https://etherscan.io/tx/0x1952402d33cc3f0d98b8a23db68c1e1724d4e534972cfe00a07e5fa5777559d1#eventlog. This log has multiple events but only one birth event associated with it: 
+ https://etherscan.io/tx/0x1952402d33cc3f0d98b8a23db68c1e1724d4e534972cfe00a07e5fa5777559d1#eventlog. This log was triggered by multiple events but only one birth event associated with it: 
 ```JSON
 {
         "address": "0x06012c8cf97BEaD5deAe237070F9587f8E7A266d",
@@ -248,7 +248,7 @@ Querying the blockchain for information on the kitty through its ID yields more 
 ```JavaScript
 (new web3.eth.Contract(CORE_ABI, ADDRESS)).methods.getKitty("0x" + hexId).call();
 ```
-To view the ABI and address, see `contract.ts`.
+To view the ABI and address, see `contract.ts` or visit https://etherscan.io/address/0x06012c8cf97bead5deae237070f9587f8e7a266d#code
 
 Response in JavaScript types:
 ```JavaScript
@@ -290,6 +290,8 @@ https://medium.com/block-science/exploring-cryptokitties-part-1-data-extraction-
 And verified here:
 
 https://etherscan.io/address/0x06012c8cf97bead5deae237070f9587f8e7a266d#events
+
+https://gist.github.com/arpit/071e54b95a81d13cb29681407680794f
 
 Operations:
 
