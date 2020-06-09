@@ -1,8 +1,5 @@
 #!/usr/bin/env node
 
-// TODO
-// Refactor increment logic
-
 // Command-Line Interface
 import yargs from 'yargs';
 import Web3 from 'web3';
@@ -12,8 +9,8 @@ import fs from 'fs';
 import config from './config.json'; // infura project id, x-api-token for cryptokitties developers
 import { CORE_ABI, ADDRESS, BIRTH_TOPIC } from './contract';
 
-const KITTIES_URL = 'https://public.api.cryptokitties.co/v1/kitties/'; // append kitty id to fetch
-const RANGE_SIZE = 10;
+const KITTIES_URL = 'https://public.api.cryptokitties.co/v1/kitties/'; // append kitty id in decimal to fetch
+const RANGE_SIZE = 1000;
 
 const options = yargs
     .usage('Usage: $0 [options] -f [/path/to/file.json] -s [starting-block-number] -e [ending-block-number] -n -v')
@@ -28,13 +25,13 @@ const options = yargs
         alias: "start",
         describe: "starting block",
         type: "number",
-        default: 10207400
+        default: 6607985
     })
     .option("e", {
         alias: "end",
         describe: "ending block",
         type: "number",
-        default: 10207462
+        default: 7028323
     })
     .option("n", {
         alias: "no-file",
@@ -75,17 +72,23 @@ let totalPregnancyCount = 0;
 let totalMommaMap = new Map<string, number>();
 
 searchBlocks(options.s, options.e).then(() => {
+    console.log("");
     console.log("Total number of pregnancies within range: " + totalPregnancyCount);
 
     let maxBirths = 0;
+    let genZeroBirths = 0;
     let maxMatronId: string[] = []; // in case there's a tie
     for (const [key, value] of totalMommaMap.entries()) {
-        if (!maxBirths || maxBirths <= value) {
-            if (maxBirths === value) {
-                maxMatronId.push(key);
-            } else {
-                maxBirths = value;
-                maxMatronId = [key];
+        if (key === "0") { // gen 0 cats
+            genZeroBirths += value;
+        } else {
+            if (!maxBirths || maxBirths <= value) {
+                if (maxBirths === value) {
+                    maxMatronId.push(key);
+                } else {
+                    maxBirths = value;
+                    maxMatronId = [key];
+                }
             }
         }
     }
@@ -96,10 +99,11 @@ searchBlocks(options.s, options.e).then(() => {
         } else {
             console.log("Found a big momma with " + maxBirths + " birth" + ((maxBirths > 1) ? "s " : " ") + "within range.");
         }
+        console.log("There " + ((genZeroBirths === 1) ? "was " : "were ") + genZeroBirths + " gen 0 cat" + ((genZeroBirths === 1) ? " " : "s ") + "added during this time.");
 
         for (let i = 0; i < maxMatronId.length; i++) {
             let cryptoKittiesResponse: KittyResponse;
-            let ethResponse: KittyEth;
+            let ethResponse: KittyEthResponse;
 
             axios({
                 'method': 'GET',
@@ -115,7 +119,7 @@ searchBlocks(options.s, options.e).then(() => {
                 })
                 .catch((err) => console.error("Error querying CryptoKitties API: " + err)) // using catch to continue execution even after error
                 .then(() => kittyContract.methods.getKitty("0x" + maxMatronId[i]).call()
-                    .then((res: KittyEth) => {
+                    .then((res: KittyEthResponse) => {
                         if (verbose) console.log("Querying Ethereum Blockchain...");
 
                         ethResponse = res;
@@ -142,63 +146,17 @@ searchBlocks(options.s, options.e).then(() => {
                         : cryptoKittiesResponse.data.created_at
                             ? (new Date(cryptoKittiesResponse.data.created_at)).toUTCString()
                             : "unknown"));
-                    // ethResponse.birthTime is a timestamp string
-                    // cryptoKittiesResponse.data.created_at is a UTC string
 
                     console.log("Genes:");
                     console.log(ethResponse.genes ?? "Not found.");
-                    // To decode the genome: 
-                    // https://medium.com/newtown-partners/cryptokitties-genome-mapping-6412136c0ae4
-                    // https://public.api.cryptokitties.co/v1/cattributes/eyes/12
-                    // or just plug in the id: https://kittycalc.co/read/?k1=462838&k2=461679
+                }, (err) => {
+                    console.error("Error retrieving statistics for matron ID: " + parseInt("0x" + maxMatronId[i]) + ". Error: " + err);
                 });
         }
     } else {
         console.log("Found no mommas within range.");
     }
 });
-
-// Types ================================================================
-type MapObject<T> = {
-    [key: string]: T;
-}
-interface StorageItem {
-    startBlock: number;
-    endBlock: number;
-    totalBirths: number;
-    mommaMap: MapObject<number>;
-}
-interface KittyResponse {
-    status: number;
-    data: {
-        id: number;
-        name: string;
-        generation: number;
-        created_at: string;
-        color: string;
-        kittyType: string;
-        enhancedCattributes: string[];
-        isExclusive: boolean;
-    }
-}
-interface KittyEth {
-    isGestating: boolean;
-    isReady: boolean;
-    cooldownIndex: string;
-    nextActionAt: string;
-    siringWithId: string;
-    birthTime: string;
-    matronId: string;
-    sireId: string;
-    generation: string;
-    genes: string;
-}
-interface Kitty {
-    birth: Date;
-    name: string;
-    generation: number;
-    genes: string; // web3 receives uint256 as strings, or could use BigNumber.js to parse
-}
 
 // Helpers ================================================================
 function mergeObjectIntoMap(to: Map<string, number>, from: MapObject<number>) {
@@ -225,7 +183,7 @@ async function searchBlocks(startBlock: number, endBlock: number) {
         startBlock = temp;
     }
 
-    if (verbose) console.log("Searching range: " + startBlock + " - " + endBlock);
+    console.log("Searching range: " + startBlock + " - " + endBlock);
 
     for (let blockNumberIter = startBlock; blockNumberIter < endBlock;) {
         let start = blockNumberIter;
@@ -312,18 +270,15 @@ function queryInfura(start: number, end: number, write = true) {
 
                 let matronId = data ? data[2].replace(/^0+(?!$)/, "") : null;
                 // choosing not to parseInt to convert hex string (without "0x" prefix) to decimal number so can convert mommaMap to a json object with string keys
-                if (verbose) console.log("Found matronId: 0x" + matronId);
                 if (matronId != null) {
                     let initialValue = mommaMap.get(matronId) ?? 0;
                     mommaMap.set(matronId, ++initialValue);
                     pregnancyCount++;
 
-                    // TODO: may move after this then so can apply even if get data from file
-                    let totalInitialValue = totalMommaMap.get(matronId) ?? 0;
+                     let totalInitialValue = totalMommaMap.get(matronId) ?? 0;
                     totalMommaMap.set(matronId, ++totalInitialValue);
                     totalPregnancyCount++;
-                    if (verbose) console.log("Current total pregnancy count: " + totalPregnancyCount);
-                }
+                    }
             }
 
             if (useFile && write) {

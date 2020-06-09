@@ -1,290 +1,150 @@
 # The Aim
-build a program that takes a startingBlock and endingBlock as arguments and counts the total number of births that happened during that range. Finally, use that information to find the Kitty (birth timestamp, generation and their genes) that gave birth to the most kitties.
+Find the total number of CryptoKitties births within a certain range of Ethereum blocks, and find the kitty that gave birth the most often during that time.
 
-Need to add a config.json with {"id"=<infura project id>} to src.
- 
-Smart contracts can emit events and write logs to the blockchain upon mining a transaction.
+# Installation
+Add a `config.json` file to src with the following:
+```JSON
+    "id": <Infura project ID>
+    "token": <CryptoKitties API token, optional>
+```
+Adding the CryptoKitties API token will return more information about the returned mothers, such as their name and primary color.
 
-topics: compute signature of event with keccak256(“Birth(address,uint256,uint256,uint256,uint256)”) =
-0x0a5311bd2a6608f08a180df2ee7c5946819a649b204b554bb8e39825b2c50ad5
+For caching and easier retrieval of data, add a `json` file with `{}` in it or use the `storage.json` provided, which contains data for 1,000 block increments so Infura will not have to be queried repeatedly for the same ranges. You can specify a file not named `storage.json` in the current directory with `kitten-stats -f /path/to/file.json`.
 
-# Initial Tests
-Corresponding to log found at 
- https://etherscan.io/tx/0x1952402d33cc3f0d98b8a23db68c1e1724d4e534972cfe00a07e5fa5777559d1#eventlog
- 
-blockNumber: 10195151
+Then run the following commands:
+```
+npm run build
+sudo npm i -g
+```
+This will compile the typescript files and install the command.
 
- matronId: 548192
+## Example Usage
+Result of command:  `kitten-stats -s 10207400 -e 10207462` (not verbose, for the block range 10207400 - 10207462):
 
- hex data: 
-* 0x000000000000000000000000093108180ea5e76b8d937fb7c445354c28a534d7
-*  00000000000000000000000000000000000000000000000000000000001d88f8
-*  0000000000000000000000000000000000000000000000000000000000085d60 <- matronId
-*  00000000000000000000000000000000000000000000000000000000001d888b
-*  00007ad8b29086580ce30d683dc421b92a585d01a5ef7198800ce54a58c6bdc4
+```
+Searching range: 10207400 - 10207462
 
-
-Between blocks 10207400 - 10207462, there are two matrons with one birth each.
-
-Matron ID: 1393895
-Name: Miss Perrfect
-Color: cyan
-Generation: 13
-Birth: Fri, 15 Feb 2019 06:27:36 GMT
-Genes:
-464801593674718185383774022982343334021953654200500795202568051653611630
+Total number of pregnancies within range: 2
+Found some big mommas with 1 birth within range.
+There were 0 gen 0 cats added during this time.
 
 Matron ID: 1935857
 Name: Popo Maverickpet
 Color: olive
 Generation: 2
-Birth: Fri, 05 Jun 2020 13:48:24 GMT
+Birthday: Fri, 05 Jun 2020 13:48:24 GMT
 Genes:
 297060440275645027458572475832135781570660105525034848235791157343453316
 
+Matron ID: 1393895
+Name: Miss Perrfect
+Color: cyan
+Generation: 13
+Birthday: Fri, 15 Feb 2019 06:27:36 GMT
+Genes:
+464801593674718185383774022982343334021953654200500795202568051653611630
+```
 
+Gen 0 cats have 0 for their matron ID, and their births are included in the total pregnancy count returned.
 
+## Options
+```
+  --help         Show help                                             [boolean]
+  --version      Show version number                                   [boolean]
+  -f, --file     Path to a storage .json file. If no path is supplied, the
+                 current directory is used. [string] [default: "./storage.json"]
+  -s, --start    starting block                      [number] [default: 6607985]
+  -e, --end      ending block                        [number] [default: 7028323]
+  -n, --no-file  Will not read or write to a storage file
+                                                      [boolean] [default: false]
+  -v, --verbose  descriptive log of process           [boolean] [default: false]
+```
 
+# Rationale
+Smart contracts can emit events and write logs to the blockchain upon mining a transaction. By querying the blockchain for logs of a certain topic, we can efficiently retrieve large amounts of data that will not change over time. This means we don't have to read blocks directly!
 
- CryptoKitties API example response: 
+## Initial Tests
+Getting logs from the Ethereum blockchain is easily done with a web3.eth query to pastLogs that pertain to the birth topic, computed with:
+```JavaScript
+keccak256(“Birth(address,uint256,uint256,uint256,uint256)”) =
+0x0a5311bd2a6608f08a180df2ee7c5946819a649b204b554bb8e39825b2c50ad5
+```
+Query for a range from block start to end, inclusive, using the CryptoKitties address:
+```JavaScript
+Promise prom = web3.eth.getPastLogs({
+        address: ADDRESS,
+        topics: [BIRTH_TOPIC],
+        fromBlock: start,
+        toBlock: end
+    }, (err, result) => {
+      // do something
+    }
+});
+```
 
- ```
+Such a query returns an array of logs, such as the one below, also found at
+ https://etherscan.io/tx/0x1952402d33cc3f0d98b8a23db68c1e1724d4e534972cfe00a07e5fa5777559d1#eventlog. This log has multiple events but only one birth event associated with it: 
+```JSON
+{
+        "address": "0x06012c8cf97BEaD5deAe237070F9587f8E7A266d",
+        "blockHash": "0xeec0f45b0eeb5975b6f907a506471feddf459e73dfa31ad8406a4f3293dbd470",
+        "blockNumber": 10195151,
+        "data": "0x000000000000000000000000093108180ea5e76b8d937fb7c445354c28a534d700000000000000000000000000000000000000000000000000000000001d88f80000000000000000000000000000000000000000000000000000000000085d6000000000000000000000000000000000000000000000000000000000001d888b00007ad8b29086580ce30d683dc421b92a585d01a5ef7198800ce54a58c6bdc4",
+        "logIndex": 54,
+        "removed": false,
+        "topics": ["0x0a5311bd2a6608f08a180df2ee7c5946819a649b204b554bb8e39825b2c50ad5"],
+        "transactionHash": "0x1952402d33cc3f0d98b8a23db68c1e1724d4e534972cfe00a07e5fa5777559d1",
+        "transactionIndex": 94,
+        "id": "log_abb68685"
+    }
+```
+Looking back at the function we used to calcuate the topic hash, we can figure out which bits of data correspond to which parameters:
+```Solidarity
+event Birth (address owner, uint256 kittyId, uint256 matronId, uint256 sireId, uint256 genes);
+```
+
+The five parameters passed into the event are smooshed together into one big "data". We find the matron id in the hex value, which is padded with zeroes to have 64 characters in hex, making it a 256-bit integer:
+ ```JSON
+0x000000000000000000000000093108180ea5e76b8d937fb7c445354c28a534d7
+  00000000000000000000000000000000000000000000000000000000001d88f8
+  0000000000000000000000000000000000000000000000000000000000085d60 <- matronId
+  00000000000000000000000000000000000000000000000000000000001d888b
+  00007ad8b29086580ce30d683dc421b92a585d01a5ef7198800ce54a58c6bdc4
+```
+That's a long string! But the zeroes are there for padding - the real ID is only a uint32. We parse the matronId into decimal and get 548192. 
+
+The kitties are stored according to the structure below:
+```Solidarity
+struct Kitty {
+  uint256 genes;
+  uint64 birthTime; // timestamp
+  uint64 cooldownEndBlock; // timestamp after which can breed again
+  uint32 matronId; // 0 if gen0
+  uint32 sireId;
+  uint32 siringWithId; // ID of sire for pregnant matrons, otherwise 0
+  uint16 cooldownIndex; // initially floor(generation/2), + 1 for each breeding action, up to 13
+  uint16 generation; // max(matron.generation, sire.generation) + 1
+}
+```
+The number of pregnancies a cat has had is not directly tracked, although the cooldown index can be used to determine the minimum number of times the kitty has bred, such that up to `13 - floor(generation/2)` births can be seen using this metric, as the cooldown time is capped at one week and will not increase past that. Kitties also are not restricted to being exclusively matrons or sires - so the number of pregnancies a kitty has had can only be counted within a block range, not through querying information on the kitty itself.
+
+To get more information on the kitty, we send a query to the CryptoKitties API. 
+```JavaScript
+{
+  'method': 'GET',
+  'url': 'https://public.api.cryptokitties.co/v1/kitties/' + decimalID,
+  'headers': {
+    'x-api-token': config.token
+  }
+```
+
+The response looks something like this: 
+ ```JavaScript
  { status: 200,
   statusText: 'OK',
-  headers:
-   { date: 'Fri, 05 Jun 2020 20:41:04 GMT',
-     'content-type': 'application/json',
-     'transfer-encoding': 'chunked',
-     connection: 'close',
-     'set-cookie':
-      [ '__cfduid=db8d8aa433a9a8b31f4dc3b40c38d616a1591389663; expires=Sun, 05-Jul-20 20:41:03 GMT; path=/; domain=.cryptokitties.co; HttpOnly; SameSite=Lax; Secure' ],
-     'access-control-allow-origin': '*',
-     vary: 'Accept-Encoding',
-     'x-request-id': 'e64cc1d4-bebe-48d5-8cfd-05be9c7fe2bb',
-     'cf-cache-status': 'DYNAMIC',
-     'cf-request-id': '0327d04a5200000fb3efa96200000001',
-     'expect-ct': 'max-age=604800, report-uri="https://report-uri.cloudflare.com/cdn-cgi/beacon/expect-ct"',
-     'strict-transport-security': 'max-age=15552000; includeSubDomains',
-     'x-content-type-options': 'nosniff',
-     server: 'cloudflare',
-     'cf-ray': '59ecb656e8770fb3-SJC' },
-  config:
-   { url: 'https://public.api.cryptokitties.co/v1/kitties/1393895',
-     method: 'get',
-     headers:
-      { Accept: 'application/json, text/plain, */*',
-        'x-api-token': 'AlB5RLpww6cdcRf_q7PID0Y0SWZSvrw5SGivYOkUo3Q',
-        'User-Agent': 'axios/0.19.2' },
-     transformRequest: [ [Function: transformRequest] ],
-     transformResponse: [ [Function: transformResponse] ],
-     timeout: 0,
-     adapter: [Function: httpAdapter],
-     xsrfCookieName: 'XSRF-TOKEN',
-     xsrfHeaderName: 'X-XSRF-TOKEN',
-     maxContentLength: -1,
-     validateStatus: [Function: validateStatus],
-     data: undefined },
-  request:
-   ClientRequest {
-     _events:
-      { socket: [Function],
-        abort: [Function],
-        aborted: [Function],
-        error: [Function],
-        timeout: [Function],
-        prefinish: [Function: requestOnPrefinish] },
-     _eventsCount: 6,
-     _maxListeners: undefined,
-     output: [],
-     outputEncodings: [],
-     outputCallbacks: [],
-     outputSize: 0,
-     writable: true,
-     _last: true,
-     upgrading: false,
-     chunkedEncoding: false,
-     shouldKeepAlive: false,
-     useChunkedEncodingByDefault: false,
-     sendDate: false,
-     _removedConnection: false,
-     _removedContLen: false,
-     _removedTE: false,
-     _contentLength: 0,
-     _hasBody: true,
-     _trailer: '',
-     finished: true,
-     _headerSent: true,
-     socket:
-      TLSSocket {
-        _tlsOptions: [Object],
-        _secureEstablished: true,
-        _securePending: false,
-        _newSessionPending: false,
-        _controlReleased: true,
-        _SNICallback: null,
-        servername: 'public.api.cryptokitties.co',
-        npnProtocol: false,
-        alpnProtocol: false,
-        authorized: true,
-        authorizationError: null,
-        encrypted: true,
-        _events: [Object],
-        _eventsCount: 8,
-        connecting: false,
-        _hadError: false,
-        _handle: null,
-        _parent: null,
-        _host: 'public.api.cryptokitties.co',
-        _readableState: [ReadableState],
-        readable: false,
-        _maxListeners: undefined,
-        _writableState: [WritableState],
-        writable: false,
-        _bytesDispatched: 217,
-        _sockname: null,
-        _pendingData: null,
-        _pendingEncoding: '',
-        allowHalfOpen: false,
-        server: undefined,
-        _server: null,
-        ssl: null,
-        _requestCert: true,
-        _rejectUnauthorized: true,
-        parser: null,
-        _httpMessage: [Circular],
-        _idleNext: null,
-        _idlePrev: null,
-        _idleTimeout: -1,
-        [Symbol(res)]: [TLSWrap],
-        [Symbol(asyncId)]: 37,
-        [Symbol(lastWriteQueueSize)]: 0,
-        [Symbol(bytesRead)]: 3689,
-        [Symbol(connect-options)]: [Object] },
-     connection:
-      TLSSocket {
-        _tlsOptions: [Object],
-        _secureEstablished: true,
-        _securePending: false,
-        _newSessionPending: false,
-        _controlReleased: true,
-        _SNICallback: null,
-        servername: 'public.api.cryptokitties.co',
-        npnProtocol: false,
-        alpnProtocol: false,
-        authorized: true,
-        authorizationError: null,
-        encrypted: true,
-        _events: [Object],
-        _eventsCount: 8,
-        connecting: false,
-        _hadError: false,
-        _handle: null,
-        _parent: null,
-        _host: 'public.api.cryptokitties.co',
-        _readableState: [ReadableState],
-        readable: false,
-        _maxListeners: undefined,
-        _writableState: [WritableState],
-        writable: false,
-        _bytesDispatched: 217,
-        _sockname: null,
-        _pendingData: null,
-        _pendingEncoding: '',
-        allowHalfOpen: false,
-        server: undefined,
-        _server: null,
-        ssl: null,
-        _requestCert: true,
-        _rejectUnauthorized: true,
-        parser: null,
-        _httpMessage: [Circular],
-        _idleNext: null,
-        _idlePrev: null,
-        _idleTimeout: -1,
-        [Symbol(res)]: [TLSWrap],
-        [Symbol(asyncId)]: 37,
-        [Symbol(lastWriteQueueSize)]: 0,
-        [Symbol(bytesRead)]: 3689,
-        [Symbol(connect-options)]: [Object] },
-     _header: 'GET /v1/kitties/1393895 HTTP/1.1\r\nAccept: application/json, text/plain, */*\r\nx-api-token: AlB5RLpww6cdcRf_q7PID0Y0SWZSvrw5SGivYOkUo3Q\r\nUser-Agent: axios/0.19.2\r\nHost: public.api.cryptokitties.co\r\nConnection: close\r\n\r\n',
-     _onPendingData: [Function: noopPendingOutput],
-     agent:
-      Agent {
-        _events: [Object],
-        _eventsCount: 1,
-        _maxListeners: undefined,
-        defaultPort: 443,
-        protocol: 'https:',
-        options: [Object],
-        requests: {},
-        sockets: [Object],
-        freeSockets: {},
-        keepAliveMsecs: 1000,
-        keepAlive: false,
-        maxSockets: Infinity,
-        maxFreeSockets: 256,
-        maxCachedSessions: 100,
-        _sessionCache: [Object] },
-     socketPath: undefined,
-     timeout: undefined,
-     method: 'GET',
-     path: '/v1/kitties/1393895',
-     _ended: true,
-     res:
-      IncomingMessage {
-        _readableState: [ReadableState],
-        readable: false,
-        _events: [Object],
-        _eventsCount: 3,
-        _maxListeners: undefined,
-        socket: [TLSSocket],
-        connection: [TLSSocket],
-        httpVersionMajor: 1,
-        httpVersionMinor: 1,
-        httpVersion: '1.1',
-        complete: true,
-        headers: [Object],
-        rawHeaders: [Array],
-        trailers: {},
-        rawTrailers: [],
-        upgrade: false,
-        url: '',
-        method: null,
-        statusCode: 200,
-        statusMessage: 'OK',
-        client: [TLSSocket],
-        _consuming: true,
-        _dumped: false,
-        req: [Circular],
-        responseUrl: 'https://public.api.cryptokitties.co/v1/kitties/1393895',
-        redirects: [],
-        read: [Function] },
-     aborted: undefined,
-     timeoutCb: null,
-     upgradeOrConnect: false,
-     parser: null,
-     maxHeadersCount: null,
-     _redirectable:
-      Writable {
-        _writableState: [WritableState],
-        writable: true,
-        _events: [Object],
-        _eventsCount: 2,
-        _maxListeners: undefined,
-        _options: [Object],
-        _redirectCount: 0,
-        _redirects: [],
-        _requestBodyLength: 0,
-        _requestBodyBuffers: [],
-        _onNativeResponse: [Function],
-        _currentRequest: [Circular],
-        _currentUrl: 'https://public.api.cryptokitties.co/v1/kitties/1393895' },
-     [Symbol(isCorked)]: false,
-     [Symbol(outHeadersKey)]:
-      { accept: [Array],
-        'x-api-token': [Array],
-        'user-agent': [Array],
-        host: [Array] } },
+  headers: {...},
+  config: {...},
+  request: ClientRequest {...},
   data:
    { id: 1393895,
      name: 'Miss Perrfect',
@@ -293,13 +153,13 @@ Genes:
      image_url_cdn: 'https://img.cn.cryptokitties.co/0x06012c8cf97bead5deae237070f9587f8e7a266d/1393895.png',
      image_url_png: 'https://img.cryptokitties.co/0x06012c8cf97bead5deae237070f9587f8e7a266d/1393895.png',
      image_path: '',
-     generation: 13,
-     created_at: '2019-02-15T06:27:36Z',
+     generation: 13, // uint16 
+     created_at: '2019-02-15T06:27:36Z', // UTC timestamp
      color: 'cyan',
      is_fancy: true,
      is_exclusive: false,
      fancy_type: 'MissPurrfect',
-     language: 'en',
+     language: 'en', // ISO Language Code
      kitty_type: 'fancy',
      enhanced_cattributes: [],
      status:
@@ -316,7 +176,7 @@ Genes:
      fancy_ranking: 1276,
      prestige_time_limit: null,
      auction: { seller: null },
-     matron:
+     matron: // empty object if generation 0
       { id: 1384192,
         name: 'Miss Purrfect',
         image_url: 'https://img.cryptokitties.co/0x06012c8cf97bead5deae237070f9587f8e7a266d/1384192.png',
@@ -331,7 +191,7 @@ Genes:
         language: 'en',
         status: [Object],
         owner: [Object] },
-     sire:
+     sire: // empty object if generation 0
       { id: 1386694,
         name: 'Miss Purrfect',
         image_url: 'https://img.cryptokitties.co/0x06012c8cf97bead5deae237070f9587f8e7a266d/1386694.png',
@@ -367,35 +227,45 @@ Genes:
         approved: false } } }
 ```
 
-"cattributes": [{
+Cattribute example: 
+```JSON
+{
   "description": "orangesoda",
   "type": null
- }, {
-  "description": "simple",
-  "type": null
- }, {
-  "description": "granitegrey",
-  "type": null
- }, {
-  "description": "coffee",
-  "type": null
- }, {
-  "description": "pouty",
-  "type": null
- }, {
-  "description": "totesbasic",
-  "type": null
- }, {
-  "description": "topaz",
-  "type": null
- }, {
-  "description": "cymric",
-  "type": null
- }]
+ }
+```
 
-# To Run
-npm run build
-npm run test
+Querying the blockchain for information on the kitty through its ID yields more reliable (i.e. fewer undefined) data. Connecting an Ethereum node to a Web3 instance and querying the CryptoKitties address and its ABI (Application Binary Interface - which acts as an adaptor to allow interaction with the Ethereum virtual machine and the compile Ethereum smart contract):
+```JavaScript
+(new web3.eth.Contract(CORE_ABI, ADDRESS)).methods.getKitty("0x" + hexId).call();
+```
+To view the ABI and address, see `contract.ts`.
+
+Response in JavaScript types:
+```JavaScript
+interface KittyEthResponse {
+    isGestating: boolean;
+    isReady: boolean;
+    cooldownIndex: string;
+    nextActionAt: string;
+    siringWithId: string;
+    birthTime: string; // timestamp 
+    matronId: string;
+    sireId: string;
+    generation: string;
+    genes: string; // uint256, can also be parsed as BigNumber
+}
+```
+With the genes, we can see what the kitty is really made of!
+
+The kitty genome has been mostly decoded. More information can be found:
+https://medium.com/newtown-partners/cryptokitties-genome-mapping-6412136c0ae4
+
+By individual attribute:
+https://public.api.cryptokitties.co/v1/cattributes/eyes/12
+
+By individual kitty id:
+https://kittycalc.co/read/?k1=462838&k2=461679
 
 # Resources
 Creating a CLI with Typescript:
@@ -424,23 +294,6 @@ https://hackernoon.com/understanding-ethereum-a-complete-guide-6f32ea8f5888
 
 https://developer.okta.com/blog/2019/06/18/command-line-app-with-nodejs
 
-In general, tokens on the blockchain are fungible. The value of every token is the same and,
-similar to cash, it doesn’t matter what token you receive. Because of this, blockchains track
-counts of tokens instead of the specific tokens themselves. This works well for things like stocks
-or currencies, but because CryptoKitties are genetically unique and breedable, we needed to
-create a non-fungible token environment.
-
-To mitigate this, we created a descending clock auction. Sellers choose a high opening bid, a
-minimum closing bid, and a timeframe for which they’d like their auction to run. Buyers are able
-to choose their purchase price along that spectrum by purchasing when the price aligns with
-their perceived value of the CryptoKitty being sold – as long as someone else doesn’t buy it
-before them. Buyers pay gas when they complete a purchase and sellers pay gas to initiate an
-auction.
-
-Think of a blockchain as a massive public list of transactions. At its simplest, a single transaction would represent a transfer of something, perhaps a bitcoin or a cryptokitty, from one person to another. Every time a bunch of new transactions occur, we add another ‘block’ to the ‘chain’ containing these new transactions. This same public list is kept and updated by lots of different parties all around the world. This makes it very difficult for one single entity to try and manipulate this transaction list and therefore ensures the integrity of the list.
-
-ABI (Application Binary Interface) as adapter to interact with the compiled Ethereum smart contract that the Ethereum virtual Machine (EVM) executes.
-
 requesting
 request-promise
 https://github.com/io4/cryptokitties/blob/master/index.js
@@ -448,167 +301,3 @@ cryptokitties-contrib
 https://github.com/scottie/cryptokats/blob/master/index.js
 
 https://gist.github.com/arpit/071e54b95a81d13cb29681407680794f
-```Solidarity
-struct Kitty {
-  uint256 genes;
-  uint64 birthTime; // timestamp
-  uint64 cooldownEndBlock; // timestamp after which can breed again
-  uint32 matronId; // 0 if gen0
-  uint32 sireId;
-  uint32v siringWithId; // ID of sire for pregnant matrons, otherwise 0
-  uint16 cooldownIndex; // floor(generation/2) + 1 for each breeding action
-  uint16 generation; // max(matron.generation, sire.generation) + 1
-}
-```
-
-
-uint16 cooldownIndex = uint16(_generation / 2);
-        if (cooldownIndex > 13) {
-            cooldownIndex = 13;
-        }
-
-class Cattribute {
-          "type": "body",
-          "description": "koladiviya",
-          "position": 31,
-          "kittyId": 129
-}
-
-
-
-
-     
-
-
-cooldown {
-increases every time it breeds
-
-generation
-case 0:
-case 1:
-return 1;
-case 2:
-case 3:
-return 2;
-case 4:
-case 5:
-return 5;
-case 6:
-case 7:
-return 10;
-case 8:
-case 9:
-return 30;
-case 10:
-case 11:
-return 60;
-case 12:
-case 13:
-return 120;
-case 14:
-case 15:
-return 4*60;
-case 16:
-case 17:
-return 8*60;
-case 18:
-case 19:
-return 16*60;
-case 20:
-case 21:
-return 24*60;
-case 22:
-case 23:
-return 2*24*60;
-case 24:
-case 25:
-return 4*24*60;
-default:
-return 7*24*60;
-
-add 2 for each time they breed;
-
-}
-
-```
-class Kitty {
-    uint256 genes;
-    uint64 birthTime; // timestamp
-    uint64 cooldownEndBlock; // timestamp after which can breed again
-    uint32 matronId; // 0 if gen0
-    uint32 sireId;
-    uint32 siringWithId; // ID of sire for pregnant matrons, otherwise 0
-    uint16 cooldownIndex; // floor(generation/2) + 1 for each breeding action,
-    uint16 generation; // max(matron.generation, sire.generation) + 1
-}
-
-```
-
-```
-class KittyResponseVerbose {
-    id: number;
-    name: string;
-    bio: string;
-    imageUrl: string;
-    imageUrlCdn: string;
-    imageUrlPng: string;
-    imagePath: string;
-    generation: number; // uint16
-    createdAt: Date; // UTC timestamp
-    color: string;
-    isFancy: boolean;
-    isExclusive: boolean;
-    fancyType: string;
-    language: string; // ISO Language Code
-    enhancedCattributes: Cattribute[];
-    status: Status;
-    purrs: PurrStat;
-    watchList: {
-        count: number;
-        isWatchlisted: boolean;
-    };
-    hatched: boolean;
-    isPrestige: boolean;
-    prestigeType: null;
-    prestigeRanking: null;
-    prestigeTimeLimit: null;
-    auction: {};
-    matron: Kitty | {}; // empty object if generation 0
-    sire: Kitty | {};
-    owner: {
-        address: string; // hexadecimal
-};
-}
-
-// https://gist.github.com/arpit/071e54b95a81d13cb29681407680794f
-class Kitty {
-    uint256 genes;
-    uint64 birthTime; // timestamp
-    uint64 cooldownEndBlock; // timestamp after which can breed again
-    uint32 matronId; // 0 if gen0
-    uint32 sireId;
-    uint32v siringWithId; // ID of sire for pregnant matrons, otherwise 0
-    uint16 cooldownIndex; // floor(generation/2) + 1 for each breeding action, max 13
-    uint16 generation; // max(matron.generation, sire.generation) + 1
-}
-
-class Cattribute {
-    type: string;
-    description: string;
-    position: number;
-    kittyId: number;
-}
-class Status {
-    cooldown: Date;
-    cooldownIndex: number;
-    isReady: boolean;
-    isGestating: boolean;
-}
-class PurrStat {
-    count: number;
-    isPurred: boolean;
-}
-class watchListStat {
-
-}
-```

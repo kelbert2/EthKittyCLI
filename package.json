@@ -1,5 +1,5 @@
 {
-  "name": "cryptokitties",
+  "name": "eth-kitty-cli",
   "version": "1.0.0",
   "description": "",
   "main": "lib/index.js",
@@ -14,6 +14,10 @@
   "keywords": [],
   "author": "Kristianna Elbert (https://kelbert2.github.io/)",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kelbert2/EthKittyCLI.git"
+  },
   "bin": {
     "hello-kitty": "./lib/test.js",
     "kitten-stats": "./lib/index.js",
